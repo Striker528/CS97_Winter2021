@@ -1,0 +1,581 @@
+Lecture 11, 2-17-21
+
+Taking a break from Git, project
+
+Talk about low-level software construction. 
+	operating systems
+	hardware controllers
+	IoT
+	CS 111
+	
+C/C++ used to "rule the world" a bit for ordinary apps. 
+	Emacs, Chromium based in this technology
+	
+We'll do C. You know C++. 
+C++ builds a (relatively thin) abstraction layer over C
+So the professor can tell me what's *not* in C++. 
+
+Abstraction layer: 
+	layer: because C++ was originally built atop C. 
+		The first C++ compiler read C++ programs and generated C programs. 
+		These C programs were fed to a C compiler. 
+	abstraction: because you can think just in C++ and avoid thinking in the lower (C) level. 
+		1 level away from the base
+			Has costs. 
+			But controvery as C++ can also work with the lower level
+
+
+C++ features not in C:
+
+	Classes (and objects?) not in C - don't have to worry about polymorphism, encapsulation (namespaces), inheritance.
+		objects can be *abstract*, in the sense that their users don't know and don't care about how they're implemented.
+		This kind of abstraction can be done in C "by hand", but is more of a pain, and often people don't bother. 
+		
+	Templates 
+		(C folks use preprocessor macros, which have their own problems.)
+	
+	Struct can have static data members(They are members that are the same for all instances of structs) , functions
+		(In C, struct can only have ordinary members) 
+			i.e, it talks only about the layout of data in an object) 
+	
+	Namespace control for modularity
+		(In C you do modularity via separate compilation.) 
+		A namesapce is a mapping from identifers to what they mean
+			{ sin -> <implementation of sin function> ,
+			  cos -> <...> }
+			 Compile time objects that I can manipulate
+		
+	Overloading is easy in C++, and this supports abstraction. 
+		Same identifer stands for different function bodies, depeending on the types of the operands. 
+			concat(a, b)
+				1 function if a and b are arrays
+				Another function if a and b are strings
+		(In C, there is a feature _Generic, which supports overloading only on primitive data types like char, float, and is rearely used.)
+
+	Exception handling is easy
+		(In C, a primitive substitue, <setjmp.h>. Hard to use correctly, and most avoided)
+		Most C programmers have functions return a success indicator as well as a normal value. This can be a portmanteau (old kind of suitcase 
+			that holds many different things in different compartments).
+			Example: getchar() returns the next stdin input byte (0 ... 255)
+			OR the special constatn EOF (-1) to indicate an error; 
+			look 'errno' for details. 
+	
+	heap memory allocation is built-in
+		C has a library to do it. <stdlib.h> defines malloc, realloc, free, calloc (some people write their own) 
+		
+	I/O is more abstract in C++ (with cin, cout, <<, >>)
+		C has library funcitons for that
+			<stdio.h> printf, fopen, ... (too high level for some)
+			<unistd.h> write, open, ... (lower level)
+			
+
+Architecture of a C environment (development, execution) 
+
+	CS 33 in 3 minutes:
+		a running program = 
+			memory (big array of bytes)
+			hardware has instruction pointer (points into this memory)
+				plus other registers (pointer,s integers, floats, ...)
+			program stored in the memory somewhere
+			data stored somewhere else (can be addressed by pointers) 
+		Hardware (HW): fetches instruction pointer (insn)
+			increments insn pointer
+			executes the insns
+
+
+#include <stdio.h> // extern int getchar (void); 
+
+int 
+main (void){
+	return ! getchar ();
+}
+
+Steps:
+	1. Preprocessing:
+	
+		Translates C to C-without-preprocessor-statements
+		
+		gcc -E simple.c
+		
+		gcc -E simple.c | sed '/#/d' > simple.identifer
+	
+	2. Translate from C code to assembly language (text file)
+	
+		gcc -S -O2 simple.i #generates simple.s, assembly language file
+		
+		enbr64: helps ubunte with stack overflow
+	
+	3. Assemble the machine code from the .s file (generates simple.o)
+		
+		gcc -c simple.s
+		
+	4. Link the machine code with the standard library (generates a.out)
+	
+		gcc simple.o
+		
+	Loader (reads contents of a.out into memory, sets insn pointer to the memory)
+		./a.out
+	
+	Now the program is running, but it needs help to do so. 
+		It needs to do I/O, it needs to communicate to other programs, etc. 
+	
+		The operating systesm kernal arranges for this. 
+		So your program runs as a hybrid:
+			* ordinary insns (load, store, add) run at full speed
+			* privileged insns (OS takes over and decides what to do)
+				"system calls" are C functions that stand for small bits of insns (written in asm (assembly))
+				gets OS attention, and let it take over temporarily 
+				
+How to debug this? (The answer is not just "use GDB"!)
+
+	2 major categories of tools;
+	
+		developer tools
+			time 
+				- how long it took something to run
+				 outputs CPU time
+				- (time ./a.out)
+				
+			strace
+				- logs syscalls
+				- (strace ./a.out)
+			
+			valgrind
+				- runs your program looking for memory errors. 
+				- (it's not perfect, but it's quite good)
+				- (valgrind./a.out)
+				
+			gdb
+				- big topic, talk about it later....
+
+				
+
+What should you be looking for from a compiler?
+What compilers are there?
+
+2 major free C compiler: GCC, Clang
+Many other proprietary compilers: ICC, NVCC, Oracle Developer Studio, ...
+	I: Intel
+	NV: NVidia
+
+We'll look at GCC. (Free, Eggerts used to contribute to it)
+
+Brief tour GCC internals
+
+
+Is the compiler portable? 
+	portable: useful in lots of environments
+	*compiler* portability vs *target* portability
+		When you're running GCC< what platforms can GCC run on?
+		When you're executing the code that GCC generated, what platforms can that code run on?
+		Consider the problem of compiling GCC itself (it's written in C++)
+													 ( it can compile C++)
+			Here there are 3 machines you're worred about;
+				target - ( see above)
+					The machine the GCC-generated code is intended to run on. 
+					On SEASnet, the default target is x86-64 (since that's what the CPUs are)
+					You can tell gcc to generate code for the x86 (32-bit machine), by using 'gcc -m32'
+				build - the machine you're compiling GCC on
+				host - the machine that the GCC you're building will run on
+				
+				host = x86-64, build = ARM, target = RISC-V
+					This means we're compiling GCC with GCC. 
+					We do this compilation on x86-64.
+					The resulting compiler will on ARM, 
+						and when you use this compiler, it'll generate RISC-V code. 
+
+		GCC supports a wide variety of targets, but there are some limits
+			Every target must have a *flat address space* 
+				All of memory can be addressed by any pointer
+				Typically pointers are 64 bits, memory as living in a 2**64-size address space
+		Target variation:
+			Is int 32, 16, 64, 8 bits?
+			Is char 8 bits or wider?
+			Does code live in the same address space as data? 
+				(used by smaller devices)
+
+How can GCC generate code for different kinds of machine, effectively? 
+	GCC is split into multiple modules. 
+	Most of these modules are machine independent
+		(e.g, the preprosser)
+		So there's only 1 version of these modules. 
+	GCC parameterizes the machine-dependent modules by using a configuration file, that tells these modules how to run. 
+		It's called a "machine description file" which contains a bunch a declaration describing the machine
+			(e.g, pointer width, 
+				  how many registers, their names, 
+				  what insns are available
+				target ABI
+					ABI = Application Binary Interface
+					=  conventions by which 1 module can invoke another. 
+					This includes the calling convention for this target. 
+					ABI for Liniux x86-64 disagrees with ABI for MS-Windows x86-64)
+		Once you have that file, tell GCC development process about it, and it generates C++ code from that file, which will be 
+			the machine-dependent modules for GCC. 
+		The .md (machine description file) can also contain C++ or C code. 
+		
+	How can GCC generate code from different languages, effectively?
+		GCC can compile C, C++, Go, Java, ADA, ...
+		
+		It does so by partioning its modules into 2 categories: 
+			language-independent (most of GCC)
+			language-dependent Language Front End (LFE). 
+				It's converting the source code into a "generic structure" representing the program in a language independent way. 
+				The LFE was designed for C, but its extended for C++, ... 
+		
+		L language front ends 
+		M machine description files
+		measn L*M compilers (cheaper than writing L*M compilers from scratch) 
+		
+		
+GCC compiler *passes*
+	A *pass* is some sort of traversal over your program in which the compiler is trying to do something. 
+	(A *single-pass* compiler makes just one traversal; 
+		these tend to be fast - and can be helpful in development. 
+		But they generate low-quality code.) 
+		
+	1. Parsing - calls LFE to produce generic data structures. 
+	2. Gimplification - pun on simplificaiton. 
+		Translates these data structures to a simple form called GIMPLE (3 address representation)
+		Each instruction: 
+			a = b + c
+			might be a simple GIMPLE insn
+		Each operand is either a constant, register, or "temporary(register of piece of memory, not sure yet)" 
+	3. Tree single static assignment (SSA)
+		Takes GIMPLe form and translates that into something simplier (more easily optimized) 
+			e.g., remove dead code (code that cannot be possibly executed)
+				This can be deducible even for "good" C programs. 
+				Can be executed on 32-bit but not 64-bit for example. 
+			find out when variables are set and used, then warn about unitilized vars. 
+			lots of other optimzations
+	4. Inter-procedural optimization (walks through all GIMPLE in your program) 
+		"whole-program" optimization (look at your entire .o file)
+		link-time optimization (when you're linking together several .o files)
+	5. RTL passes (register transfer language)
+		rely on .md files (which describe all the machine insns and registers)
+		allocate temporaries to registers
+		lots of other optimizations
+			key idea: keep stuff in registers as much as possible because registers are fast, memory is slow.
+
+
+
+UCLA CS 97 lecture 2021-02-17
+
+Taking a break from Git, project.
+
+Talk about low-level software construction.
+  operating systems
+  hardware controllers
+  IoT
+  CS 111
+
+C/C++ used to “rule the world” a bit for ordinary apps.
+  Emacs, Chromium based on this technology
+
+Q. what do you mean as an “abstraction” layer?
+A. Layer because C++ was originally built atop C.
+   The first C++ compiler read C++ programs and generated C programs.
+   These C programs were fed to a C compiler.
+   “Abstraction” because you can think just in C++ avoid thinking
+     in the lower (C) level.
+
+Confession:
+   I’m no C++ expert.  I last used it in the early 1990s
+   and said I’d never use it again.  This has to some extent
+   been a handicap, but it’s also been a win.
+
+We’ll do C.  You know C++.
+C++ builds an (relatively thin) abstraction layer over C
+So I can tell you what’s *not* in C++.
+
+C++ features not in C:
+
+   classes (and objects?) - polymorphism, encapsulation, inheritance
+      objects can be *abstract*, in the sense that their users
+         don’t know and don’t care how they’re implemented
+      This kind of abstraction can be done in C “by hand”,
+         but is more of a pain, and often people don’t bother.
+
+   templates
+      (C folks use preprocessor macros, which have their own problems.)
+
+   struct can have static data members, functions
+      (In C, struct can only have ordinary members;
+        i.e., it talks only about the layout of data in an object)
+
+   namespace control for modularity
+      (In C you do modularity via separate compilation.)
+      A namespace is a mapping from identifiers to what they mean
+         { sin -> <implementation of sin function>,
+       cos -> ... }
+
+   overloading is easy, and this supports abstraction
+      Same identifier stands for different function bodies, depending
+        on the types of the operands.  concat(a, b)
+
+      (In C, there is a feature _Generic, which supports overloading
+       only on primitive data types like char, float, and is rarely used.)
+
+   exception handling is easy
+      (In C, a primitive substitute, <setjmp.h>.  Hard to use correctly,
+       and mostly avoided.)
+      Most C programmers have functions return a success indicator
+      as well as a normal value.  This can be a portmanteau.
+      Example:  getchar() returns the next stdin input byte (0..255)
+      OR the special constant EOF (-1) to indicate an error;
+      look ‘errno’ for details.
+
+   heap memory allocation is built-in
+      C has a library to do it  <stdlib.h> defines malloc, realloc, free,
+         calloc (some people write their own)
+
+   I/O is more abstract in C++ (with cin, cout, <<, >>)
+      C has library functions for that
+         <stdio.h> printf, fopen, ...  (too high level for some)
+     <unistd.h> write, open, ...   (lower level)
+
+Architecture of a C environment (development, execution)
+
+  CS 33 in 3 minutes:
+    a running program =
+       memory (big array of bytes)
+       hardware insn pointer (points into this memory)
+                plus other registers (pointers, integers, floats, ....)
+       program stored in the memory somewhere
+       data stored somewhere else (can be addressed by pointers)
+    HW (hardware): fetches insn
+        increments insn pointer
+    executes the insns
+
+  Compiling, linking, executing
+     Preprocessing:
+       Translates C to C-without-preprocessor-statements
+
+       gcc -E simple.c | sed '/#/d' >simple.i
+
+     Translate from C code to assembly language (text file)
+     (This is the hard part.)
+
+       gcc -S -O2 simple.i # generates simple.s
+
+     Assemble the machine code from the .s file (generates simple.o)
+
+       gcc -c simple.s
+
+     Link the machine code with the standard library (generates a.out)
+
+       gcc simple.o
+
+     Loader (reads contents of a.out into memory, sets insn pointer to that memory)
+       ./a.out
+
+     Now the program is running, but it needs help to do so.
+        It needs to do I/O, it needs to communicate to other programs, etc.
+
+        The operating system kernel arranges for this.
+    So your program runs as a hybrid:
+      * ordinary insns (load, store, add) run at full speed
+      * privileged insns (OS takes over and decides what to do)
+          “system calls” are C functions that stand for
+            small bits of insns (written in asm)
+        get OS attention, and let  it take over temporarily
+
+
+
+Q. so if we didn't use functions from standard library we could skip
+the linking step?
+A. No; some work is done before ‘main’ starts, and some is done
+
+after ‘main’ returns. These insns are put into a.out and are not in your .o
+file. It’s possible to do this work yourself, but that’s rare.
+
+Q. What does “!! -L” do?
+A. It’s a Bashism; !! means a copy of the previous command.
+
+
+How to debug this? (The answer is not just “use GDB”!)
+
+  Two major categories of tools:
+
+     developer tools
+        time     outputs CPU time
+    strace   logs syscalls
+    valgrind runs your program looking for memory errors
+              (It’s quite good, but it’s not perfect....)
+    gdb      big topic, talk about it later....
+
+Q. does this command include ordinary instructions, or only the
+privileged instructions?
+A. It’s only the system calls, i.e., the “functions” that request
+OS services.  It lists their args and results.
+
+Q. why do we use sed ‘/#/d’?
+A. It removed the lines starting with ’#’, which I didn’t want you to see
+and which were not needed.
+
+Q. what do you mean by boilerplate?
+A. Bureaucratic overhead (useful for other things but not machine code,
+in this context).
+
+
+
+What should you be looking for from a compiler?
+What compilers are there?
+
+Two major free C compilers: GCC, Clang
+Many other proprietary compilers: ICC, NVCC, Oracle Developer Studio, ...
+   Intel, NVidia,
+We’ll look at GCC.
+Brief tour GCC internals https://gcc.gnu.org/onlinedocs/gccint/
+
+Is the compiler portable?  “portable” = useful in lots of environments
+  *compiler* portability vs *target* portability
+    When you’re running GCC, what platforms can GCC run on?
+    When you’re executing the code that GCC generated, what platforms
+      can that code run on?
+    Consider the problem of compiling GCC itself (it’s written in C++)
+                                                 (it can compile C++)
+       Here there are three machines you’re worried about;
+          target - (see above)
+      build - the machine you’re compiling GCC on
+      host - the machine that the GCC you’re building will run on
+
+    GCC supports a wide variety of targets, but there are some limits
+      Every target must have a *flat address space*
+        all of memory can be addressed by any pointer
+    typically pointers are 64 bits, memory as living
+      in a 2**64-size address space
+    Target variations:
+       Is int 32, 16, 64, 8 bits?
+       Is char 8 bits or wider?
+       Does code live in the same address space as data?
+         (used by smaller devices)
+
+    Q. What is a target?
+    A. It’s the machine the GCC-generated code is intended to run on.
+       On SEASnet, the default target is x86-64 (since that’s what
+       the CPUs are).  You can tell gcc to generate code for the x86
+       (32-bit machine), by using ‘gcc -m32’.
+
+    Q. what is difference between host and build?
+    A. host = x86-64, build = ARM, target = RISC-V
+         THis means we’re compiling GCC with GCC.
+     We do this compilation on x86-64.
+     The resulting compiler will on ARM,
+       and when you use this compiler, it’ll generate RISC-V code.
+
+   How can GCC generate code for different kinds of machines, effectively?
+      GCC is split into multiple modules.
+      Most of these modules are machine independent
+        (e.g., the preprocessor)
+    So there’s only one version of these modules
+      GCC parameterizes the machine-dependent modules
+        by using a configuration file, that tells these modules
+    how to run.  It’s called a “machine description file”
+      contains a bunch of declarations describing the machine
+        (e.g., pointer width,
+               how many registers, their names,
+           what insns are available,
+           target ABI
+              ABI = Application Binary Interface
+                  = conventions by which one module can
+                 invoke another.
+                This includes the calling convention
+                for this target.
+             ABI for Linux x86-64 disagrees with ABI for
+                 MS-Windows x86-64)
+        Once you have that file, tell GCC development process about it, and               it generates C++ code from that file, which will be
+      the machine-dependent modules for GCC.
+        The .md file can also contain C++ or C code.
+
+    How can GCC generate code from different languages, effectively?
+      GCC can compile C, C++, Go, Java, Ada, ...
+
+      It does so by partioning its modules into two categories:
+        language-independent (most of GCC)
+    language-dependent Language Front End (LFE).
+       It converting the source code into a “generic structure”
+         representing the program in a language independent way.
+        The LFE was designed for c, but is extended for C++, ...
+
+      L language front ends
+      M machine description files
+      means L*M compilers (cheaper than writing L*M compilers from scratch)
+
+
+GCC compiler *passes*
+  A *pass* is some sort of traversal over your program
+    in which the compiler is trying to do something.
+    (A *single-pass* compiler makes just one traversal;
+     these tend to be fast - and can be helpful in development.
+     But they generate low-quality code.)
+
+  1. Parsing - calls LFE to produce generic data structures.
+  2. Gimplification - pun on "simplification" translate these
+   a simple form called GIMPLE that is a *three-address representation*
+        a = b + c   might be a single GIMPLE insn
+     each operand is either constant, register, or “temporary”
+  3. Tree single static assignment (SSA)
+      Translate GIMPLE into simpler forms (more easily optimized)
+        e.g., remove dead code (code that cannot possibly be executed)
+           this can be deducible even for “good” C programs.
+        find out when variables are set and used
+    warn about uninitialized vars
+    lots of other optimizations
+  4. Inter-procedural optimization (walks through all GIMPLE in your program)
+       “whole-program” optimization (look your entire .o file)
+       link-time optimization (when you’re linking together several .o files)
+  5. RTL passes (register transfer language)
+       rely on .md files (which describe all the machine insns and registers)
+       allocate temporaries to registers
+       lots of other optimizations
+          key idea: use registers as much as possible
+
+What GCC can do, other than the obvious?
+
+Q. are we done with the git discussion?
+A. No, lots more git later.
+
+::::::::::::::
+simple.c
+::::::::::::::
+#include <stdio.h> // extern int getchar (void);
+
+int
+main (void)
+{
+  return ! getchar();
+}
+::::::::::::::
+simple.s
+::::::::::::::
+main:
+    endbr64
+    subq    $8, %rsp
+    call    getchar@PLT
+    testl    %eax, %eax
+    sete    %al
+    addq    $8, %rsp
+    movzbl    %al, %eax
+    ret
+::::::::::::::
+buggy.c
+::::::::::::::
+#include <stdio.h> // extern int getchar (void);
+
+
+int
+main (void)
+{
+  char ar[10];
+  int i;
+  for (i = 0; i < 100; i++)
+    {
+      int c = getchar();
+      if (c == EOF)
+    break;
+      ar[i] = c;
+    }
+
+  return i == 0;
+}
+	

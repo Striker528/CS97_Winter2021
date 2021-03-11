@@ -1,0 +1,281 @@
+UCLA CS 97 Lecture 1/4/2021
+
+Software Construction
+
+Ideal case: change the world via software
+- app for checking COVID-19 inoculation status
+- doctor/nurse gives you a digiti certificate
+- have a central server where you can register that you've been vacinated
+- your cellphone app spits out a QR code (or whatever)
+- my cellphone app verifies it (and vice versa)
+- now we both know we've been vaccinated and can take off our masks
+- let's assume this app is a good idea
+
+How do we build this app?
+- |privacy issues, of course
+- |finacial issues
+- |marketing issues
+- techinial issues is what this class is about - how do you actually build it?
+						- you could learn React Native, 
+						- just enough to write the app
+						= problem: this assumes a lot
+	But: You're going to have to be the expert who "know's everything"
+	You'll need to know the general patterns of sofware construction, 
+	as these patterns recur, and come up in later generations of 
+	software technology
+
+	Latest-and-greatest software toolkits have a short shelf life.
+	*Oldie-but-goodie software toolkits have obvious shortcomings, 
+		even though they'll be around for a while
+
+
+CS 130: course on software engineering, advanced superset of what we do
+
+What we're doing (as a subset of CS 130)
+- programming
+- data design
+- integration: gluing togethere sofware components
+- configuration: how to "start up" a program with the right options
+	- getting a program to start and go in the right way
+- testing
+- versioning (version control) how to control software changes (mutations)
+------------
+- forensics: trying to figure out what really happened when things went wrong (SolarWinds fiasco)
+------------
+CS 130 Stuff:
+- static analysis: ways of looking at the code to find bugs, really good
+- management of software developers 
+- bigger picture(like physical buildings - construction vs. archiectus)
+------------
+
+Prefered linux distribuiton for this class:
+- Seasnet runs RHEL 7 (please use for homeworks)
+- lnxsrv06, 07, 9, 10
+- use this to check your homeworks. 
+- Ubuntu 20.10.
+- Fedora 33
+- Mint, Arch, etc. = professor has not used them but are good
+
+Linux distributions:
+- software packages that include a certain version of Linux
+- (5.80 for the professor), plus a lot of other stuff along with the kernek
+- A distribution needs to pick versions of all the packages, and make sure they all work well together, plus apply some distro-specific patches
+- Ubuntu #1 on desktop
+- RHEL/Centos/Fedor #1 on servers
+
+- Window Users use Linux if not seasenet: 
+- VM (Virtual machine), VirtualBox say
+- Ubuntu from a spare partition
+- I can use WSL by just dowloading the Ubuntu WSL from the Microsoft shop
+
+
+UCLA CS 97 lecture 2021-01-04
+
+Software Construction
+
+Dream goal for the course.
+
+Ideal case: change the world via software
+  app for checking COVID-19 inoculation status
+  doctor/nurse gives you a digital certificate
+  have a central server where you can register that you’ve been vaxed
+  your cellphone app spits out a QR code (or whatever)
+  my cellphone app verifies it (and vice versa)
+  now we both know we’ve been vaccinated and can take off our masks.
+  Let’s assume this app is a good idea.
+
+How do we build this app?
+  |privacy issues, of course
+  |financial issues
+  |marketing issues
+  technical issues - How do you actually build it?
+                     You could just learn React Native,
+                just enough to write the app.
+             Problem: this assumes a lot.
+    BUT: You’re going to have to be the expert who “knows everything”.
+    You’ll need to know the general patterns of software construction,
+    as these patterns recur, and come up in later generations of
+    software technology.
+
+    Latest-and-greatest software toolkits have a short shelf life.
+  * Oldie-but-goodie software toolkits have obvious shortcomings,
+       even though they’ll be around for a while.
+
+
+Please use chat for questions.
+
+Q. Will lectures be recorded?
+A. Yes, and posted on CCLE.  But the interaction of questions is important.
+   This class is more informal/impromptu than most.  No textbook.
+
+Q. Will the notes be posted?
+A. Yes, the stuff I’m typing here will be posted along with the lecture.
+   You’re better off taking notes yourself, too.
+   This will help as a memory aid.
+
+Q. What’s the difference between software construction/engineering/development?
+A.
+   We have a whole other course on software engineering - CS 130.
+      It’s an advanced superset of what we do.
+
+   What we’re doing (as a subset of CS 130)
+
+     programming  ) CS 31, CS 32
+     data design  )
+     integration - gluing together software components
+     configuration - how to “start up” a program with the right options
+     testing
+     versioning (version control) how to control software changes (mutations)
+     ------
+     forensics - being a detective when things go wrong (SolarWinds fiasco)
+     ------
+     CS 130 stuff
+     static analysis - really good stuff here
+     management of software developers
+     software architecture
+     bigger picture (like physical buildings - construction vs architectus)
+     ...
+
+Q. Is there a preferred Linux distribution for this class?
+A. SEASnet runs RHEL 7 (please use for homeworks).
+     (lnxsrv06, 07, 09, 10)
+     Use this to check your homeworks.
+  I’m typing this on Ubuntu 20.10.
+  My office desktop runs Fedora 33.
+  Mint, Arch, SUSE, etc. are all good.
+
+Q. Are linux distributions just the linux server you use?
+A. They are software packages that include a certain version of Linux
+   (5.8.0 for me) plus a lot of other stuff along with the kernel.
+   A distribution needs to pick versions of all the packages,
+   and make sure they work well together,
+   plus apply some distro-specific patches.
+
+Q. which of these distros would be the most lightweight to run?
+A. Depends on what you mean by “lightweight”.  The smallest ones
+   won’t work, because they lack the proper development tools.
+   There are lightweight windowing environments, Xfce, say?
+   I’ve used GNOME because I don’t care that much about UIs.
+
+Q. What are mint arch suse… are they alternatives to visual studio and Xcode?
+A. Yes and no.  They are competition, but they provide not just
+   development environments, but also operations stuff.
+
+Q. In a similar vein, will using Windows Linux subsystem be sufficient
+   for the homeworks?
+A. Haven’t a clue.  I suspect yes, but I don’t know of anyone that
+   has done it.
+
+Q. Is macos going to be sufficient compared to the linux distros?
+A. Maybe for some assignments.  Make sure you run on SEASnet though.
+   macOS core is similar to Linux kernel, but Apple tends to go its
+   own way at the shell level, and this can cause glitches.
+
+Q. When is the first assignment due?
+A. See later.
+
+Q. What environment would you recommend downloading for this course?
+A. If it’s just me? Ubuntu #1 on desktops, RHEL/Centos/Fedora #1
+   on servers.
+
+Q. Do the instructions of the first hw tell us how to run our code and
+which environment to use..?
+A. No (!?). Talk to TAs, LAs, etc. This is a learn-by-doing course.
+A lot of the doing is failing, and learning from your failures, and
+not letting them overwhelm you or get to you.  The more mistakes,
+the more learning!  Don’t beat your head against the wall - ask
+a TA or LA (but don’t make that your first option).
+
+Q. so how do windows users use Linux if not seasnet? VM?
+A. Virtual machines are probably the most popular.  VirtualBox, say.
+   Boot from an Ubuntu partition, say.
+   You can use WSL by just downloading the Ubuntu WSL from the Microsoft shop.
+
+Q. Will future lectures use slides for course material? (Just
+wondering for note organization)
+A. No (at least not usually).
+
+Q. Do you prefer our cameras on/off?
+A. 153 students? I can’t see you anyway.
+
+Q. Will we talk about licensing at all (GPL/LGPL)? Or is that outside
+the scope of the course?
+A. Maybe a bit.  Though it’s more of a CS 130 thing.
+
+
+
+Some course mechanics.
+
+https://web.cs.ucla.edu/classes/winter21/cs97-1/
+
+Q. Are there dates for these lectures/topics?
+A. Not yet.
+
+Q. Dates of exams? And are they 24 hrs?
+A. Midterm - Wednesday of 5th week, instead of lecture.
+   2 hour midterm, pick 2 contiguous hours within 24.
+   Starts at noon Wednesday; you must submit by noon Thursday.
+   Given via CCLE “quiz”.
+   This is all tentative!
+
+Q. how many people per group? will we get to choose our groupmates?
+A. fivish.  To some extent yes.  Details on Friday.
+    The TAs are in charge of the projects.
+
+Q. Will the exams be open-note?
+A. Yes.  Open book, notes, Internet.
+
+Q. Will there be a buffer time to account for turning the exam in online?
+A. There should be no need for scanning etc.
+
+Q. When will the final exam take place? Will it be 24 hrs as well?
+A. Registrar specifies starting time of a 24-hour period.
+   You pick 3 contiguous hours within that.
+
+Q. is this course doable with another upper-div cs course? asking for a friend
+A. Of course!
+
+Q. Will we be doing the lab exercises in discussion?
+A. Yes, at least to some extent.
+
+Q. since we’re reviewing lab stuff in disc, do you recommend starting
+lab post-disc?
+A. Look at it before discussion, don’t necessarily start it.
+
+Q. do we have to use a dribble file to record our keystrokes or can we just write them into a text file? i’m asking because i’m expecting to make a lot of mistakes in the process of getting to the correct answer and i don’t think that you want half of my dribble file to be mistakes that i made
+A. You can do it by hand if necessary.  Dribble file should be easier.
+
+Introduce self.
+
+Paul Eggert - background 55% academia, 45% industry
+   3 years CS prof UCSB
+   3 years startup (15 people) logic programming, NLP, DBs
+   3 years large computer computer Unisys (#2 in the world)
+  12 years startup (5 - 50 people) software & network consulting
+       industrial experience is mostly backend
+  18 years lecturing at UCLA
+         hobbies: develop/maintain GNU apps (coreutils, grep)
+     time zone database coordinator
+
+Log into SEASnet (or install Emacs on your laptop).
+
+Start Emacs.
+
+C-h t    for tutorial
+C-v      scroll down (C- means "control-")
+M-v      scroll up (M- means "meta-" and is typically ALT).
+C-x C-c  exit Emacs
+...
+
+
+
+---- shell transcript of help after lecture was over (not recorded) ----
+
+1002-lnxsrv09 $ emacs
+1003-lnxsrv09 $ echo $PATH
+/u/cs/fac/eggert/bin:/usr/local/cs/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin
+1004-lnxsrv09 $ export PATH
+1005-lnxsrv09 $ PATH=/usr/local/cs/bin:$PATH
+1006-lnxsrv09 $ echo $PATH
+/usr/local/cs/bin:/u/cs/fac/eggert/bin:/usr/local/cs/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin
+

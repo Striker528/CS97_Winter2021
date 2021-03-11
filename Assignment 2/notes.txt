@@ -1,0 +1,602 @@
+Exercise 2.1: Navigating through Emacs source code
+
+Start up a fresh Emacs with a *scratch* buffer.
+- (emacs)
+- (C-x C-b) :shows all buffers open at the moment
+- (C-x o): switch to buffer
+	switch windows by typing (C-x o) ( other-window ).
+- take cursor to *scratch* line and press enter
+
+
+-(M-x Apropos ...)
+- (message "---")
+- (setq x `(1 2 3))
+- (message (number-to-string (cadr x)))
+
+-(C-x b) :create a new buffer, give it a name, then press enter
+-(M-x lisp-mode): go into lisp-mode
+-(C-x C-s): save the buffer
+-(M-x load-file)
+
+
+To warm up, compute 2^3^4 (i.e., 2**(3**4)) in the *scratch* buffer, by using the expt function. 
+Use Emacs to determine whether this number fits into a 64-bit signed integer, by writing a Lisp expression that yields t if so and nil if not.
+(A 64-bit signed integer. It has a minimum value of -9,223,372,036,854,775,808 and a maximum value of 9,223,372,036,854,775,807 (inclusive).)
+
+-(
+
+
+( if (> (expt 2 (expt 3 4)) (expt 2 63))
+	t
+	nil)
+
+
+)
+- (C-e) :(jump to end of line) (Optional)
+- (C-x C-e) :execute (necessary)
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+Type M-: and use it to compute 2^3^4.
+
+Answer: 2417851639229258349412352 (#o1000000000000000000000000000, #x2000\00000000000000\000)
+----------------------------------------------------------------------------------------------------------------------------------------------
+Get a list of keybindings by typing (C-h b).
+
+switch windows by typing C-x o ( other-window ).
+----------------------------------------------------------------------------------------------------------------------------------------------
+Look for two keybindings: (C-h k) and (M-SPC). 
+	C-h k stands for “Type Control-h, then ‘k’.” M-SPC is “Meta Space”; 
+	on good keyboards you can get this by holding down Alt while hitting the space bar, 
+	but you may need to type “Esc” and then follow by hiting the space bar. 
+	We will examine these two keybindings in more detail.
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+Type (C-h k C-h k) and describes what happens and why. (This should relate to the C-h b output mentioned previously.)
+
+
+-C-h k runs the command describe-key (found in global-map), which is an
+interactive compiled Lisp function in ‘help.el’.
+
+It is bound to C-h k, <f1> k, <help> k, <menu-bar> <help-menu>
+<describe> <describe-key-1>.
+
+(describe-key KEY-LIST &optional BUFFER)
+
+  Probably introduced at or before Emacs version 22.1.
+
+Display documentation of the function invoked by KEY-LIST.
+KEY-LIST can be any kind of a key sequence; it can include keyboard events,
+mouse events, and/or menu events.  When calling from a program,
+pass KEY-LIST as a list of elements (SEQ . RAW-SEQ) where SEQ is
+a key-sequence and RAW-SEQ is its untranslated form.
+
+While reading KEY-LIST interactively, this command temporarily enables
+menu items or tool-bar buttons that are disabled to allow getting help
+on them.
+
+BUFFER is the buffer in which to lookup those keys; it defaults to the
+current buffer.
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+Type (C-h k M-SPC) and describes what happens and why. (This should also relate.)
+
+
+-M-SPC runs the command just-one-space (found in global-map), which is
+an interactive compiled Lisp function in ‘simple.el’.
+
+It is bound to M-SPC.
+
+(just-one-space &optional N)
+
+  Probably introduced at or before Emacs version 22.1.
+
+Delete all spaces and tabs around point, leaving one space (or N spaces).
+If N is negative, delete newlines as well, leaving -N spaces.
+See also ‘cycle-spacing’.
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+Try out (M-SPC) on some sample text, to see how it works.
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+Visit the source code for the function that implements M-SPC, by going to its help and clicking (or typing RET) on its source file name.
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+Notice how M-SPC is implemented in terms of a more-general function, which does not have a keybinding. 
+Use M-: to execute this more-general function on a buffer, such that the function changes the buffer's contents.
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+Similarly, use M-x to execute the more-general function on a buffer.
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+*************************************************************************************************************************************************
+Exercise 2.2: Scripting Emacs
+Use the Emacs command (M-x what-line) and see what it does.
+
+-It tells you what line your are on
+----------------------------------------------------------------------------------------------------------------------------------------------
+(M-x what-line) simply tells you what line you are on, not how many lines are in the buffer. 
+Design and implement a command (M-x which-line) that acts like M-x what-line except that it says 
+"Line 27 of 106" in contexts where M-x what-line would merely say "Line 27". 
+Do this by using (C-h f) to get help about what-line, navigating through that help to find its source code, 
+	(C-x o to get to the new window, then hit enter on the 'simple.el')
+putting a copy of the source code into a new file which-line.el, editing that file, loading it into Emacs, and then executing your new command.
+
+-(M-x propose)
+- (what-line)
+
+-(M-x eval-expression)
+-(what-line)
+
+When counting all the lines in a buffer, simply count the number of newline characters that it contains. 
+This means that if a buffer does not end in a newline, you should not count the characters after the last newline to be part of another line. 
+In particular, an empty buffer has zero lines.
+
+
+(defun what-line ()
+  "Print the current buffer line number and narrowed line number of point."
+  (interactive)
+  (let ((start (point-min))
+        (n (line-number-at-pos)))
+    (if (= start 1)
+        (message "Line %d" n)
+      (save-excursion
+        (save-restriction
+          (widen)
+          (message "line %d (narrowed line %d)"
+                   (+ n (line-number-at-pos start) -1) n))))))
+
+T.A:
+(defun what-line()
+	"Print the current line number (in the buffer) of point."
+	(interactive) 
+	(save-restriction
+	  (widen)
+	  (save-excursion
+	    (beginning-of-line)
+	    (message "Line %d"
+			(1+ (count-lines 1 (point)))))))
+
+
+(setq L line-number-at-pos(point-max))
+(if(/= char-before (point-max) 10) (- L 1))
+(if(<= L 0) (setq L 1))
+
+
+(defun which-line()
+  "Print the current buffer line number and narrowed line number of point."
+  (interactive)
+  (let ((start (point-min))
+        (n (line-number-at-pos)))
+    (if (= start 1)
+        (message "Line %d" n)
+      (save-excursion
+        (save-restriction
+          (widen)
+          (message "line %d (narrowed line %d)"
+                   (+ n (line-number-at-pos start) -1) n))))))
+
+(defun which-line()
+	"Print the current line number (in the buffer) of point."
+	(interactive) 
+	(save-restriction
+	  (widen)
+	  (save-excursion
+	    (beginning-of-line)
+	    (message "Line %d"
+			(1+ (count-lines 1 (point)))))))
+
+
+(defun which-line()
+        "Print the current line number (in the buffer) of point."
+        (interactive)
+        (save-restriction
+          (widen)
+          (save-excursion
+            (beginning-of-line)
+            (setq L (line-number-at-pos (point-max)))
+            (if (/= 10 (char-before(point-max))) (- L 1))
+            (if(<= L 0) (setq L 0))
+            (setq n (1+ (count-lines 1 (point))))
+            (message "Line %d of %d" n L))))
+
+Works:
+(defun which-line()
+        "Print the current line number (in the buffer) of point, out of the tot\
+al number of lines."
+        (interactive)
+        (save-restriction
+          (widen)
+          (save-excursion
+            (beginning-of-line)
+            (message "Line %d of %d"
+                     (1+ (count-lines (point-min) (point)))
+                     (if (=(char-before(point-max)) 10)
+                       (1+ (count-lines (point-min) (point-max)))
+                       (-(count-lines (point-min) (point-max))1))))))
+
+
+
+
+M-x load-file
+which-line.el
+*************************************************************************************************************************************************
+Homework: Python scripting
+The Python Foundation, The Python Tutorial (2020)
+Consider the old-fashioned Python 2 script randline.py.
+
+What happens when this script is invoked on an empty file like /dev/null, and why?
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+What happens when this script is invoked with Python 3 rather than Python 2, and why? 
+(You can run Python 3 on the SEASnet hosts by using the command python3 instead of python.)
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+Use Emacs to write a new script shuf.py in the style of randline.py but using Python 3 instead. 
+Your script should implement the GNU shuf command that is part of GNU Coreutils. 
+GNU shuf is written in C, whereas you want a Python implementation so that you can more easily add new features to it.
+
+#!/usr/bin/python
+
+"""
+Output lines selected randomly from a file
+
+Copyright 2005, 2007 Paul Eggert.
+Copyright 2010 Darrell Benjamin Carbajal.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+Please see <http://www.gnu.org/licenses/> for a copy of the license.
+
+$Id: randline.py,v 1.4 2010/04/05 20:04:43 eggert Exp $
+"""
+
+import random, sys
+from optparse import OptionParser
+
+class randline:
+    def __init__(self, filename):
+        f = open(filename, 'r')
+        self.lines = f.readlines()
+        f.close()
+
+    def chooseline(self):
+        return random.choice(self.lines)
+
+def main():
+    version_msg = "%prog 2.0"
+    usage_msg = """%prog [OPTION]... FILE
+
+Output randomly selected lines from FILE."""
+
+    parser = OptionParser(version=version_msg,
+                          usage=usage_msg)
+    parser.add_option("-n", "--numlines",
+                      action="store", dest="numlines", default=1,
+                      help="output NUMLINES lines (default 1)")
+    options, args = parser.parse_args(sys.argv[1:])
+
+    try:
+        numlines = int(options.numlines)
+    except:
+        parser.error("invalid NUMLINES: {0}".
+                     format(options.numlines))
+    if numlines < 0:
+        parser.error("negative count: {0}".
+                     format(numlines))
+    if len(args) != 1:
+        parser.error("wrong number of operands")
+    input_file = args[0]
+
+    try:
+        generator = randline(input_file)
+        for index in range(numlines):
+            sys.stdout.write(generator.chooseline())
+    except IOError as (errno, strerror):
+        parser.error("I/O error({0}): {1}".
+                     format(errno, strerror))
+
+if __name__ == "__main__":
+    main()
+
+Your program should support the following shuf options, with the same behavior as GNU shuf: --echo (-e), 
+--input-range (-i), --head-count (-n), --repeat (-r), and --help. 
+As with GNU shuf, if --repeat (-r) is used without --head-count (-n), your program should run forever. 
+Your program should also support zero non-option arguments or a single non-option argument "-" 
+(either of which means read from standard input), 
+or a single non-option argument other than "-" (which specifies the input file name). 
+Your program need not support the other options of GNU shuf. As with GNU shuf, your program should report an error if given invalid arguments.
+
+Your solution should use the argparse module instead of the obsolescent optparse. 
+It should not import any modules other than argparse, string and the non-optparse modules that randline.py already imports. 
+Don't forget to change its usage message to accurately describe the modified behavior.
+
+
+
+#!/usr/bin/python
+
+import random
+import argparse
+import sys
+
+def shuffle_and_output_lines(lines):
+    random.shuffle(lines)
+    for line in lines:
+        print(line)
+
+
+def main():
+    parser = argparse.ArgumentParser(description = 'test')
+    parser.add_argument('infile', nargs = '?', type=argparse.FileType('r'), default = sys.stdin)
+
+    parser.add_argument("echo", nargs = 2)
+    parser.add_argument("input-range")
+    parser.add_argument("head-count")
+    parser.add_argument("repeat")
+    parser.add_argument("help")
+
+    args = parser.parse_args()
+
+    with open(args.infile.name) as f:
+        lines = [line.rstrip() for line in f]
+    print(lines)
+    shuffle_and_output_lines(lines)
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
+
+#!/usr/bin/python
+
+import random
+import argparse
+import sys
+import string
+
+#the starting point for the shuffle
+"""
+def shuffle_and_output_lines(lines):
+    random.shuffle(lines)
+    for line in lines:
+        print(line)
+"""
+
+def main():
+
+    parser = argparse.ArgumentParser(description = 'test')
+
+    parser.add_argument('infile', nargs = '?', type=argparse.FileType('r') )#, default = sys.stdin)
+    #Use nargs = '*' for geting 0+ aguments which we are told to account for
+    parser.add_argument("-e", "--echo", nargs = '*', help = "treat each ARG as an input line")
+    parser.add_argument("-i", "--input-range", help = "treat each number LO through HI as an input line")
+    parser.add_argument("-n", "--head-count", help = "output at most COUNT lines")
+    parser.add_argument("-r", "--repeat", action = "store_true", help = "output lines can be repeated")
+
+
+    args = parser.parse_args()
+    #for testing that I have all the arguments
+    # print([(args.echo),(args.input_range), (args.head_count), (args.repeat), (args.infile)])
+    
+    #store arguments to be shuffles in 'lines' list
+    lines = []
+    numlines = 0
+
+    #-------------------------------------------------------------------------------------
+
+    #can't have -e and -l
+    #from https://github.com/coreutils/coreutils/blob/master/src/shuf.c
+    if (args.echo and args.input_range):
+        parser.error("cannot combine -e and -i options")
+
+    #--------------------------------------------------------------------------------------
+    #read file if specified
+
+    #"""
+    if(args.infile and args.infile != "-"):
+        with open(args.infile.name) as f:
+            lines = [line.rstrip() for line in f]
+    #"""
+
+    """
+    if(args.infile and args.infile != "-"):
+        f = open(args.infile, 'r')
+        lines = f.readlines()
+        lines = [line.strip() for line in lines]
+    """
+
+    #-------------------------------------------------------------------------------------------------
+
+    # --echo
+    if (args.echo != None):
+        for index in range(len(args.echo)):
+            lines.append(args.echo[index])
+        #random.shuffle(lines)
+        #for line in lines:
+            #print(line)
+        #return
+
+    #------------------------------------------------------------------------------------------------
+
+    # --input-range, two numbers, n(0+) - n+1(1+)
+    if(args.input_range):
+        txt = args.input_range
+        txt = txt.split("-")
+        low = txt[0] #the low number, before the -
+        hi = txt[1] #the second number after the -, the high number
+
+        #Checking if the LO and HI are valid
+        if (len(txt) != 2):
+            parser.error("Invalid input range 'Low-Hi': enter input range as: Low-Hi")
+        if (not(low.isdigit() and hi.isdigit())):
+            parser.error("Invalid input range 'Low-Hi': Low and Hi must be digits")
+        if (low > hi):
+            parser.error("Invalid input range 'Low-Hi': Low must be less than Hi")
+
+        #filling in
+        low = int(low)
+        hi = int(hi)
+        for index in range(low,hi,1):
+            lines.append(index)
+
+    #----------------------------------------------------------------------------------------
+
+    # --head-count logic
+    if(args.head_count):
+        numlines = args.head_count
+
+        #check N is valid, it needs to be 1 number.
+        if(len(numlines) != 1):
+            perser.error("Invalid head conut 'N': enter head count as : N")
+        if (not(numlines.isdigit())):
+            perser.error("Invalid head count 'N': N must be a digit")
+
+        #N only affects shuf when it is less then num of arguments
+        if(int(numlines) >= len(lines)):
+            numlines = len(lines)
+    else:
+        numlines = len(lines)
+
+    #-----------------------------------------------------------------------------------------
+
+    # --repeat logic
+    if(args.repeat):
+        #if no other arguments, take from stdin
+        if((len(lines) == 0) or (args.infile=="-")):
+            for line in sys.stdin:
+                line = line.strip()
+                lines.append(line)
+        if(args.head_count):
+            numlines = int(args.head_count)
+            for index in range(numlines):
+                print(random.choice(lines))
+        else:
+            while(True):
+                print(random.choice(lines))
+        return
+
+    #------------------------------------------------------------------------------------------------
+
+    #read from stdin if no options or arguments or the only argument is "-"
+    if ((len(lines) == 0) or (args.infile == "-")):
+        if(args.echo != None):
+            return
+        for line in sys.stdin:
+            line = line.strip()
+            lines.append(line)
+        numlines = len(lines)
+
+    #------------------------------------------------------------------------------------------------
+
+    #stdout
+    random.shuffle(lines)
+    #getting a wierd error where it said I converted the numlines to a string, so I just always convert it to an int
+    numlines = (int(numlines))
+    for index in range(numlines):
+        print(lines[index])
+        #print(lines)
+
+    #another possible way for shuffling
+    """
+    with open(args.infile.name) as f:
+        lines = [line.rstrip() for line in f]
+    print(lines)
+    shuffle_and_output_lines(lines)
+    """
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+nargs = how many values you want to accept
+echo = var num of values, don't know how many values the user will enter = 0 to as many they want = '*'
+short name first, then long name
+nargs default is 1
+store_true = stores a boolean
+help comes by default, -h
+version comes by default, -v
+
+shuf --help
+
+ -e, --echo                treat each ARG as an input line
+	treat each argument as the input, 
+  -i, --input-range=LO-HI   treat each number LO through HI as an input line
+	accepts a range, then generates a range of number as the input
+  -n, --head-count=COUNT    output at most COUNT lines
+	have 1 output line
+	have 2 output lines
+  -o, --output=FILE         write result to FILE instead of standard output
+      --random-source=FILE  get random bytes from FILE
+  -r, --repeat              output lines can be repeated
+	want to shuff 123, the output can be 1 1 1
+  -z, --zero-terminated     line delimiter is NUL, not newline
+      --help     display this help and exit
+      --version  output version information and exit
+stdin: 
+1 
+2 enter
+3 enter
+= gives the output
+
+shuf (some file like testing) 
+
+4 input: -e, -i, stdin, file
+
+shuf testing -n 3
+
+shuf testing -r
+
+-i, -n, -r
+
+shuf -i 1-6 -n 6 -r
+
+shuf -e 156 65 54 1 2 3
+
+limit output, repeatable 
+
+
+
+python3 shuf.py -i 1-6 -n 6 -r
+
+python3 shuf.py -e 156 65 54 1 2 3
+
+python3 shuf.py testing -n 3
+
+python3 shuf.py testing -r
+
+python3 shuf.py -i 1-6 -r
+----------------------------------------------------------------------------------------------------------------------------------------------
+What happens when your shuf.py script is invoked with Python 2 rather than Python 3, and why?
+- it doesn't work because I am using tools that were added in Python 3, which are the random functions. 
+
+***********************************************************************************************************************************************
+tar -tvf assign2.tgz *

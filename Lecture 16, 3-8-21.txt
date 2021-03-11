@@ -1,0 +1,200 @@
+UCLA CS 97 lecture 2021-03-08
+
+more about Git internals
+
+  warning: my desktop is undergoing maintenance - may be slow
+    Aside: "ops" side of "DevOps".
+      My desktop uses mirrored disk drives - each is supposed to be
+        a copy of the other.  "man mdadm" on SEASnet.
+    + I lose no data if I lose a drive.
+    - spend twice as much on disk drives
+    - What if power goes out and drives are now slightly out of sync?
+      Occasionally system automatically checks drives to see if they’re
+       in sync - a lot of I/O goes on while this is happening.
+      So we’re competing with that checking process, which goes
+      on for hours...
+        So let’s see what happens.  Maybe you won’t notice.
+
+      Part of the more general problem of backups and reliability.
+
+Let’s take a tour of a .git subdirectory; this represents
+the state of your local copy of a repository (maybe the only copy;
+more typically, the downstream version of some upstream repository).
+
+drwxrwxr-x   2 eggert eggert   4096 Mar  3 13:27 branches
+-rw-rw-r--   1 eggert eggert    258 Mar  3 13:27 config
+-rw-rw-r--   1 eggert eggert     73 Mar  3 13:27 description
+-rw-rw-r--   1 eggert eggert   2479 Mar  3 13:52 FETCH_HEAD
+-rw-rw-r--   1 eggert eggert     23 Mar  3 13:27 HEAD
+drwxrwxr-x   2 eggert eggert   4096 Mar  3 13:27 hooks
+-rw-rw-r--   1 eggert eggert 421814 Mar  3 13:52 index
+drwxrwxr-x   2 eggert eggert   4096 Mar  3 13:27 info
+drwxrwxr-x   3 eggert eggert   4096 Mar  3 13:27 logs
+drwxrwxr-x 171 eggert eggert   4096 Mar  3 13:27 objects
+-rw-rw-r--   1 eggert eggert     41 Mar  3 13:52 ORIG_HEAD
+-rw-rw-r--   1 eggert eggert  14412 Mar  3 13:27 packed-refs
+drwxrwxr-x   5 eggert eggert   4096 Mar  3 13:27 refs
+
+branches - obsolescent (for compatibility with older versions of Git)
+config - file for .git configuration (Git configuration local
+     to this copy)
+   config file for emacs/cs97 directory
+    [core]
+        repositoryformatversion = 0
+        filemode = true
+        bare = false
+        logallrefupdates = true
+    [remote "origin"]
+        url = /home/eggert/src/gnu/emacs/master
+        fetch = +refs/heads/*:refs/remotes/origin/*
+    [branch "master"]
+        remote = origin
+        merge = refs/heads/master
+
+    HOME/.gitconfig:[push]default=simple[user]name=PaulEggertemail=eggert@cs.ucla.edusigningkey=7E3792A9D8ACF7D633BC1588ED97E90E62AA7E34[sendemail]smtpencryption=sslsmtpserver=zimbra.cs.ucla.edusmtpuser=eggertsmtpserverport=465[pull]ff=only[init]defaultBranch=mainWehavetwo(moregenerally,multiple)configurationsources!Gitmergesthesealltogether,givingprioritiestothemore“local”ones.description−notthatimportant(GitWebonly)HEAD−defaultbranch(inourcase,it′sthemasterbranch)FETCHHEAD−likeHEAD,butfor‘gitfetch′Q.Pleaseexplainwhatfetchheaddoes?A.Theideabehind‘gitfetch′istocopyallupdatesmaderecentlyintotheupstreamremoterepository,intoourlocalrepository′scopyofupstream(typicallynamed‘remote/main′,‘remote/whatever′.Laterwecanmergethisintoourown‘main′/‘whatever′/etc.branches.FETCHHEADrecordstherelationshipbetweenlocalandremotebranchesQ.Doesfetchdownloadthedata,orjustthehistoryanddescriptions?A.Itdoesbothdataandmetadata.Q.Doesitcopy∗everything∗fromeverybranch?A.No,thatwouldbeexpensiveinbigprojects.Thedefaultisjustthebranchyou′reon;youcanchangethis.Youcanfetcheverything,butittakesawhileandit′srare.Q.Howisthatdonewithoutoverwritingyourcurrentdata/code?A.Theinformationabouttheremoterepositryiskeptseparate;inaseparatenamespace‘origin/∗′,soitwon′tclashwithyourstuff.Q.Doesn′tgitfetchcopieseverythingfromtheremote?I′mquiteconfusedwhenyousaiditdidntcopyeverything.A.Itdoesfetcheverythingrelevanttothebranchyou′reinterestedin.Ifsomeoneupstreaminstallschangesintothemaster/mainbranch,youwanttoknowaboutit,and‘gitfetch′willdothat.Ifsomeoneinstallsupstreamchangesintosomeotherbranchthatyoudon′tcareabout,‘gitfetch′won′tbotherwiththat.Q.So,supposethereisafileinabranchBontheupstreamserver,thatIwanttolookat,whatisthemostefficientwaytodothiswithouttotallyinterruptingyourcurrentwork?A.Assumewewanttoleavetheworkingfilesalone;we′reeditingthemetc.Oneoption:cloneourrepository(fast).NowwehaveworkingfilescorrespondingtoHEADinourlocalrepository.WewantbranchBintheremoteinstead.Sowedothis:∗Changeourclone′supstreamtobetheremoterepository.Itypicallyjustedit.git/config[remote]sectiontodothat.∗CreatebranchBtobedownstreamfromtheremote.gitbranch−−trackBorigin/BThiscreatesB,theupstreamisorigin/B,‘−−track′meanstotrackanylaterchangesinupstream.∗Switchtothatbranch.gitcheckoutBgitpull(ifI′moutofdate;gitfetch+painlessgitmerge)NowIcanlookatthefilethatIwant,intheversionthatIwant.(Therearemoreefficientwaysofgettingonefileinoneversion.ButIwanttoseethefileinitswholecontext.)hooks−hookscript,whereyoucanalterwhatGitdoesA“hook”letsyoutakecontrolfromGitwhileit′satanappropriatepointinitsactionsThe"∗.sample"hooksaresamplescriptsthatyoucanuseforrealhooks,they′renotactuallyused;they′retemplates.e.g.,.git/hooks/commit−msgchecksyourcommitmessageforplausibility,ifit′sbad,ittellsGitnottoacceptthecommit.e.g.,.git/hooks/pre−commitchecksyourcommitcontents(e.g.,youcanreject“bad”filenames).index−stagingareaforyouproposednextcommitWhenyoudoa‘gitadd′,theindexfilerecordswhatyou′veadded,insomeGit−specificformat.Q.istherewaytodiscardallthechangesinthestagingarea,dowejustcleartheindexfile?A.‘gitreset′doesthat.It′salittletricky,becausetheindexdoesn′tnecessarilymatchyourworkingfiles. edit F
+      git add F # F’s new contents are now in the index edit F some more
+         index != working files
+
+      $ git reset --hard
+         discards your changes “no matter what”, ignoring
+     all the usual checking designed to prevent you from
+     losing your works
+       not recommended for newcomers
+
+info/exclude - globbing patterns of filenames that you want Git to
+     not pay attention to, and do not want to put into a .gitignore
+     file for.
+              ‘glob’ is a shell file name pattern  ‘*.[ao]’, for example
+
+       .gitignore file is just another file that you can put under Git
+       control, it also gives globs for files you want to ignore.
+
+       You place .gitignore file under Git control, so you keep track
+       in Git of what files you want Git to ignore.
+
+     Q. If someone I work with has a different .gitignore policy, can
+     they overwrite mine? How is this kind of clash efficiently
+     resolved?
+     A. It’s resolved the same way you’d resolve a disagreement about
+     a .js file.  Democracy? Benevolent dictator? It’s up to the group.
+
+logs - records for when tips of branches etc. were updated
+  this lets Git know where (for example) HEAD was three “moves” ago,
+  where a “move” is a Git command that updates your repository.
+  logs : repository :: repository : sourcecode  (sort of)
+  Helpful for answering questions like “Who renamed branch B to C,
+  and when?”.
+
+Q. What is the difference between creating a node history from the
+log, versus getting it from the object files? Is there information in
+the object folder that is left out of the logs? (realting to the
+current homework)
+A. The object files record only: contents of source code, directories,
+commit messages.  They don’t record “meta-meta-data” like when branches
+got renamed.  The log files record that “meta-meta-data” but they
+make little sense by themselves; you’ll need the underlying data
+and metadata to make sense of the logs.
+
+Q. when you say tips of the gbranch, does it mean the HEAD pointer to
+the brach?
+A. Think of HEAD as being a pointer to the branch you’re currently
+interested in.  HEAD is “interested” in only one branch at a time.
+If you do a “git checkout B” where B is a branch, that changes HEAD.
+
+
+objects - The main part of the repository: all the data (containing
+current and old versions) are stored here.  You can think of the
+the repository as simply being a collection of objects, some of
+which have structure known to Git, but most of them are just
+byte sequences (or “blob”) corresponding to working file contents.
+packed-refs - optimized version of the refs
+refs - tips of branches, and tags
+
+Git objects
+
+  These were inspired by Unix/POSIX/Linux filesystem design.
+    Regular files are a sequence of bytes, like ‘CONTRIBUTE’.
+    Directories (under the covers) are also sequences of bytes,
+      but you can’t directly get at them.  They need special
+      system calls (not ‘read’ or ‘write’) to get at.
+
+  Git objects are like this in some sense.
+    Git blobs are like regular files (byte sequences).
+    Git trees are like directories.
+  There are differences, though.
+    In POSIX, metainformation about a file belongs to the file.
+    In Git, some of it belongs to the containing directory,
+      some to the blob itself.
+
+  In both POSIX filesystem and Git, we have a data structure on
+  secondary storage that we want to access efficiently.
+  But Git is more complicated, it wants to do more things,
+     and it’s more specialized for version control.
+
+Simplest object: a blob (sequence of bytes)
+
+Git wants to have a platform-independent name for each blob (names can
+to the blob; these names are “pointers” to blobs).  (Pointers are
+typically just 64 bits on modern machines or filesystems; Git’s
+names are wider, to avoid collisions.)  Key idea is to use a “really
+good” hash function h, such that h(byte-sequence) -> “unique” integer
+which is Git’s name for the blob (160 bits expressed in hexadecimal).
+It must be *extremely* unlikely for two different byte sequences
+to hash to the same value. Simple XOR won’t work - you need something
+fancier - the crypto people have developed functions with this property.
+They keep coming up with new functions, because flaws are discovered
+in old ones.  Git uses an old one SHA-1; it’s “good enough”.
+
+Q. Couldn’t you use the function to ‘reverse-engineer’ the hash
+function in a way?
+A. Git’s hash function is public - the source code is there.
+Can you deduce the original byte sequence from the hash?
+It’s not easy.
+
+Trees (objects that represent directories)
+  A tree is a set of tree entries, each with:
+     name
+     type (blob, tree)
+     mode (octal number, ordinarily 100644 - normal file (inspired by chmod)
+                 it can be 100755 executable, 120000 symlink, ...)
+
+
+Q. could you explain the difference between a blob and a tree again pls?
+A. regular file : directory :: blob : tree
+              POSIX                Git
+   Files can be either regular,     Objects can be either blobs, trees,
+   or directories, symlinks,        ...
+   ...
+
+   In POSIX, a directory is a set directory entries that helps you
+   find files.
+
+Q. What is the way to translate the tree data to unpack/decode the
+hash values? They are not ascii.  Like \xes\ea\23....
+A. You’ll need to uncompress them.
+
+Q. so a blob is a committed file? like if i ‘git add .’ 1.txt, 2.txt,
+3.txt, and committed those, i would see three blobs corresponding to
+1.txt,2.txt,3.txt?
+A. Yes, each blob corresponds to a committed version of a file
+in the typical case.  (We already violated this in the tutorial,
+by using “echo 'Arma virumque cano.' | git hash-object --stdin -w”,
+but it’s typical.)
+
+
+How to update these things? When you can’t change anything in history?
+
+  We don’t. We simply add new blobs and trees to the repository.
+     In the original working file, we change one byte from ‘A’ to ‘B’.
+     We generate a blob for the new contents of the working file.
+     We generate a tree for the new contents of its parent
+       directory, and we add that to the repository too.
+     This might mean several objects need to get added,
+       resulting in a new root directory for the updated system.
+
+  A “commit” is an object that represents one of these new root directories
+    (a tree) along with metainformation (committer, timestamp,
+    commit message).
+
+Next time: finish up Git, talk about building
+

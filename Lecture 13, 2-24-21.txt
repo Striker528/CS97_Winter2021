@@ -1,0 +1,308 @@
+Lecture 13, 2-24-21
+
+Last time we talked about static checking by GCC.
+Today, dynamic checking (tests done at runtime) and then debugging.
+
+Runtime checking options of GCC
+
+  (default)
+     not that much checking
+     you’ll get checking already enforced by the hardware
+       dereferencing a null pointer (following where it points to)
+       address 0 is protected
+       dereferencing an uninitialized pointer
+           sometimes catches this, sometimes not.
+       x86-64, integer overflow only for INT_MIN / -1
+                                         -2**31  / -1  == -2**31 (with overflow)
+
+  gcc -fsanitize=address -static-libasan
+
+     Attempts to catch out-of-access addresses
+        {
+      int buf[1000];
+          i = f(x, y, z);
+          buf[i] = 0;      if i == 1000
+    }
+     - This slows down the generated code because we need conditional branches.
+     + Your program now reliably crashes for this particular problem.
+
+     Not a complete check, because it’s not practical to catch
+     every invalid access without false alarms.
+     But it’s good for most common accesses.
+
+     -static-libasan means to use static linking for the
+     address-sanitization library.  Useful if you’ve built GCC
+     yourself.  /usr/local/cs/bin/gcc on SEASnet is an example.
+
+   Q. Can you explain what you mean by conditional branches?
+   A. You write ‘buf[i] = 0;’
+      Compiler generates code like this:
+           if (! (0 <= i && i < 1000))
+          __builtin_trap ();      // Crashes your program
+
+       unoptimized:
+            tstl %rax,%rax
+        jlt  ouch
+        cmpl $1000,%rax
+        jlt  ouch
+
+       ouch:
+            trap
+
+
+   Q. why does that code crash?
+   A. If i == 1000, attempts to access buf[1000], one past the end
+   of the array.
+
+   Q. What does static mean?
+   A. In “static analysis”, it means you analyze the program
+   before it runs.  + Your analysis is good for all runs.
+   - It’s not powerful enough for many issues of concern.
+
+   Q. is -fsanitize=address similar/the same as ASAN.
+   A. ASAN AddressSanitizer is a Google project that got folded
+   into GCC and Clang.
+
+   Q. do you not get that conditional overhead if you use pointer
+   arithmetic or does it do the same check?
+   A. Yes and no.  ASAN is incomplete - it sometimes misses bugs.
+   And in those cases you avoid the overhead, because it didn’t/couldn’t
+   runtime check.
+
+   Q. what is address-sanitization library?
+   A. It prints error messages when your program goes awry.
+
+
+  gcc -fsanitize=undefined -static-ubsan
+
+    UBSAN Undefined Behavior Sanitizer
+    Catch as many *undefined behaviors* as possible, *other* than
+       address problems
+    For example:
+       signed integer overflow
+         often (but not always) wraps around modulo the word size
+       shift by too much  i >> j  (when j == 200)
+       lots more like this
+
+   Q. can you explain again what is static-ubsan, why we can’t link it
+   dynamically?
+   A. On my computer, I don’t need it because I use Ubuntu-supplied GCC
+   here.  At work, I often build my own compiler (on SEASnet they’re
+   conservative, and so /usr/bin/gcc is like 2 years old), and when
+   I do that, I’ll have a problem: my own compiler will use the
+   latest ubsan interface, but it’s evolved; if I link to the
+   system ubsan library, it won’t work.
+
+  gcc -fsanitize=leak
+    catch memory leaks
+     for (int i = 0; i < 10000; i++) {
+       char *p = malloc(10000);
+       ....
+       // free (p);   Forgot this!
+     }
+
+    At the end of your program, it looks for storage that was
+      1. allocated
+      2. never freed
+      3. nobody points at it
+
+   Q. What kind of test questions might we expect about this sanitize material?
+   A. I don’t know - I’ll have to think about it.
+
+  gcc -fsanitize=thread
+    Catch race conditions (your program’s behavior depends
+      on order of execution of threads, in an unexpected/undesirable way)
+    One way to do this: insert unexpected delays.
+
+Q. can leak and/or thread be combined with each other or one of the
+first two that we said were mutually exclusive or all of these options
+mutually exclusive?
+
+A. Some can be combined; combinations can be tricky. I typically
+don’t combine them.
+
+Another form of runtime checking: this one doesn’t use or need
+the compiler’s help.
+
+   valgrind - attempts to do an approximation to
+     what -fsanitize=address etc. do, but
+
+     + you can run it on plain code compiled without any special
+       compiler options like -fsanitize.
+       (it even works inside library functions that you didn’t compile)
+
+    It does this by inspecting the instruction stream (list of
+    instructions your program will do next), planting a breakpoint
+    at any problematic instruction, and then it runs that sequence
+    of instructions.  So it can check for problems when the
+    breakpoint is executed.
+
+
+Q. so is valgrind essentially what we used when we did all the
+projects in Xcode in cs 31?
+A. I don’t know how Xcode works, but I’d guess it’s closer to -fsanitize.
+
+Q. What is the performance difference between code running -fsanitize
+and valgrind?
+A. Valgrind is typically slower.  The actual penalty? Measure to find out.
+It depends on the app and the CPU.
+
+In summary: runtime checks
+  - can miss some real runtime errors
+  - work or for one run on a particular set of test data
+  - can have severe performance penalties (thread sanitization)
+      (CPU or memory)
+
+Portability checking
+  Any change of platform gives you some portability checking
+     x86-64 -> ARM
+     gcc [-m64] -> gcc -m32
+     GCC -> Clang
+     gcc -O1 -> gcc -O2
+
+  Cross-compiling
+    compile on RHEL x86-64
+      run on TinyOS x86
+
+
+Debugging strategies and tactics
+
+   We’ve done:
+     static checking
+     dynamic checking (by compiler, by Valgrind, etc.)
+   These are good ways to prevent bugs!
+
+   The best way to handle bugs in your programs often is not to debug them,
+     to do other techniques.  Why?
+
+      * Debugging is often very inefficient.
+      * It can consume more than 50% of the resources
+         in software development.
+     It’s better to be proactive and:
+       * Prevent from occurring in the first place.
+       * Make the bugs easier to detect when they happen.
+           (static checking, dynamic checking do this)
+
+    Other ways to avoid (or simplify) debugging
+
+      Test cases
+        when you change your program, run the test cases
+
+        Many projects with a UI also provide an API
+      just for tests
+
+      Use a better platform
+         Use Xcode/nice GCC rather than a dumb compiler.
+     Use Java/Python/etc. rather than C/C++.
+
+
+      Defensive programming
+        Traces and logs
+
+    Checkpoint/restart  (save entire state of program / restore)
+
+    Exception handling
+
+    Assertions   Omit them with ‘gcc -D NDEBUG’ for production.
+        #include <assert.h>
+        int f (int n) {
+          assert (0 <= n && n < 1000000);
+          now do real stuff
+        }
+
+        Barricades
+
+             outside world --->  barricade code  ---->    core of your program
+                              (lots of checking)      clean data structures
+                                          (no checking needed)
+
+        Interpreters
+        You build a software simulator of the machine,
+        which has more checking.
+          (used by Valgrind on problematic insns)
+
+        Virtual machines
+       (see CS 33)
+       interpreters on performance steroids
+
+Let’s assume you still have a bug.
+
+Now what?
+
+What not to do:
+
+  * Guess what the problem is (because you don’t understand the bug).
+    You’re exploring an enormous set of possible bugs.
+
+A more systematic approach to debugging.
+
+  1. Stabilize the failure (bad symptoms observed by the user).
+       Often, bugs are intermittent. Fails for user, works for you.
+                                     Or, it works 99% of the time.
+       You need to figure out how to make the bug always occur.
+         You can guess how to stabilize....
+     Or you can be more methodical, by simplifying the environment.
+       e.g., run in a single-thread rather multithreaded environment.
+
+  2. Locate the failure’s source (or cause)
+
+      Software engineering terminology here is not well standardized.
+      My terminology:
+
+       * failure - bad effect observed by the user during a run, caused by:
+       * fault - latent problem in your program
+                   (in principle, you can discover many faults statically)
+       * error - mistake in the programmer’s head
+
+  3. Fix the problem by modifying the source code.
+
+      This is typically the easiest step.
+
+We’re looking at (2) today via the traditional technique of running
+a debugger.
+
+Debugger - program history (+ future) exploration tool
+
+   * Your program runs under the debugger’s control.
+   * It can stop your program and examine its data.
+   * It can change your data (or program) while it’s stopped.
+       - Self-modifying code?!?!
+
+GDB getting started.
+
+   * Compile with -g option - tells GCC to put more info into the
+      executable. (these are not insns - your program is the same)
+   * I suggest -g3 (put lots of debugging info in).
+       It puts "#define X 23" into the debugging info.
+
+Starting a program.
+
+$ gdb progname
+  # The program is not running yet.
+  # You can set up its environment.
+(gdb) set cwd /tmp    # Runs the program in the /tmp directory.
+(gdb) set TZ Europe/London # Set an environment variable.
+(gdb) set disable-randomization off  # Disables ASLR
+         ASLR means when run a program, and allocate memory via
+     malloc()/new/..., the allocator gives you randomish addresses
+     to avoid heap-overflow attacks by making addresses hard
+     to guess by the attacker
+    ASLR makes your program harder to debug, because it makes
+    failures harder to stabilize.
+    This security feature gets in the way of debugging.
+    GDB does this for you by default these days
+      which means your failures are more reproducible
+      but they might not match what the user observed.
+(gdb) ... lots of other setup options ...
+
+(gdb) r arg1 arg2 ... argn <input >output     # Run the program.
+(gdb) r # Run the program the same way you did last time in this session.
+(gdb) start # Like ‘r’ but stops at ‘main’.o
+        Lots of stuff happens before ‘main’ is called.
+      E.g., dynamic linking of all the libraries listed by ‘ldd’.
+(gdb) attach 10392    # Attach to already-running process running this program.
+(gdb) detach          # Reverses this, lets the process run free again.
+
+a bit more later on debugging
+
+please come to discussion on Git internals (next assignment)

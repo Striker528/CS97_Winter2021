@@ -1,0 +1,236 @@
+Lecture 3, 1-11-21
+
+Shells
+  “Shell” is a funny word. It’s about layering one component
+  atop another.
+
+Software stack:
+Top: 
+	.
+	.
+	.
+	high apps
+	low apps
+	kernel (memory, cpu) and low apps
+	Hardware instructions (HW) (low level instructions: add, multiply, etc.)
+Bottom:
+
+
+Emacs: (lower levels apps:
+Top: 
+	Lisp code
+	Lisp code
+	emacs core (in C)
+	Kernel & emacs core (in C)
+	Hardware (HW)
+Bottom:
+
+
+Emacs Too Big, another way of layering software, = Unix shell
+Top:
+	sh (shell, fairly small program, keep as small as possible, does most of its work by calling other applications)
+	Kernel and sh :(applications: rat, diff, git, all talk to HW)
+	Hardware (HW) 
+Bottom:
+
+UCLA CS 97 lecture 2021-01-11
+
+
+Unix / POSIX / Linux / macOS etc. file system
+	
+directory heierarchy
+		1: usr
+		share
+	dict		bin
+	linux words	sh	cat	... tons of leaves
+
+	DAG: directed acyclic graph
+		-can have 2 different links to the same direcotry
+		-each links must be called a differenet name
+		-directories must only have 1 link from its parent
+
+ls:
+	-: regular file
+	-l: symbolic link
+	d: directory
+	b: block
+
+
+   files have numbers internally
+   kinds of files:
+     regular files (most common) contain byte sequences
+     directories (map file name components to file sequence numbers)
+     symbolic links (contain text that’s intepreted as a file name)
+     char special
+     block special
+     ...
+  Directories can have only one link to them, from their parent directory.
+  Other files can have as many links as you like*
+    *there is a limit, 65,000 roughly on my machine
+
+Q.so is it like a pointer in c ?
+A. Hard links are like pointers, symbolic links not so much.
+    Every time a symlink is used, it’s interpreted symbolically.
+    If you rename the file it’s pointing to, it stops working.
+      This is called a *dangling* link.
+
+Q. when a symbolic link points to another symbolic link, will the
+command follow through both symbolic links to (say) a file?
+A. Yes.  If a -> b, and b -> c, and c is a file, then ‘cat a’ is
+equivalent to ‘cat c’.
+MQ. What if a -> b and b -> a, or what if a -> a.
+MA. At most 20 links are followed in a single file name.  Any more,
+and the operating system gives up.
+
+Q. Where on the disk are links and filenames stored?
+A. It’s a mystery, but not really.
+   The file system implementation determines this; a low level thing.
+   df command tells you a bit about it.
+
+Q. so those g, h in the table are just hard links from the directory
+pointing to the files?
+A. Every directory entry (name,value) pair in a directory is a hard link.
+   The name (with no ‘/’ or ‘\0’ in it) is called a “file name component”,
+   and the value is a file sequence number (inode number).
+
+Q. does the os automatically discard dangling symbolic links or does
+the user need the shell to do that
+A. Nothing automatic.
+
+Q. How exactly does the OS follow a symbolic link to a file, given
+that it’s not like a pointer?
+A. Procedure for resolving a file name (namei procedure:
+                                        maps file names to inode numbers).
+
+     1. Look at the first character.  If it’s ‘/’, start at the root
+        directory.  Otherwise, start at the current directory.
+    Set your cursor to this directory.
+             . = current directory
+    Every process (running program) has a current directory,
+    and you can change it by using cd command in the shell.
+            In the shell, ‘cd X’ means change to directory X.
+        ‘cd -’ means cd to the previous directory you were at.
+
+     2. Look at the next file name component, and consult
+        the cursor’s directory.  If not found, error.
+    If found, look at the inode number, find corresponding file.
+    If that file is a symlink, splice its contents into
+    the rest of the file name (if they start with /, set
+    cursor back to the root).
+
+     3. Repeat step 2 until done.
+           (but give up if more than 20 symlinks have been seen)
+
+  /a/b/c   has 3 file name components "a", "b", "c".
+      You may need to do step 2 more than 3 times, if symlinks are involved.
+
+Symlinks add complexity and slow things down.
+But they’re often helpful.
+
+ls -L says, follow symlinks
+
+ln notes.txt funny.name
+echo funny >>funny.name
+modified my notes file?
+
+If Emacs now saves, what’ll happen?
+C-x C-s
+Type “yes” and “y”.
+
+Q. Does cp act in a similar way as ln?
+A. No, “cp” copies contents; it does not create hard links
+   ordinarily.
+
+Q. what is the difference between ln -s and ln
+A. ln -s creates a symbolic link, which can point to
+   whereever you want (it can even be dangling).
+   Plain ln creates a hard link - a new entry
+      in the destination directory,
+      with the name that you specify,
+      and inode number that’s the same as the source file.
+   ln -s creates a symbolic link - a new entry to a new file (symlink)
+      whose contents are the source string
+         symlinks to directories are allowed,
+     hardlinks to directories are not.
+
+
+Q. sorry but what is the purpose of a symbolic link?
+A. They’re controversial, but:
+       * you can link to a directory
+       * dangling symlinks might be useful (Emacs lock files)
+       * You link to a file that might be replaced by renaming
+          or removal followed by recreation.
+
+Q. what do you mean by resolving a file?
+A. Whenever you give the OS a file name like "/usr/bin/sh",
+   it must *resolve* that name to a file sequence number
+   to figure out which file it really is.
+   The file name resolution algorithm is what we saw above.
+
+
+Shell is intended as a “thin layer” atop
+  1. The file system
+  2. Other commands that you can run
+       (The shell is just another command.)
+
+Theme: Little languages
+  Idea is to have an application-specific language
+    for each of your major applications.
+  *Software Tools* - break down your application into *tools*
+     small
+     easily understood in isolation
+     well-defined
+     may require some scripting (with its own little language)
+       lets you develop clear & concise notations
+       compared to writing in JavaScript, C++, ...
+This approach is controversial
+  - lots of languages to learn
+  - harder to hook together apps in different languages
+
+What languages do we have here?
+
+  * grep
+       The language of regular expressions (BREs) (Basic Regular Expressions)
+           Ordinary characters stand for themselves
+       E* is a pattern that matches zero or more occurrences of E
+       [ABC] is a pattern that matches any of those single characters
+       [^ABC] matches anything *but* A, B, or C
+       [^a-z] matches anything but a, ..., z
+       [[:space:]_A] matches any space character, or _ or A
+       abd∗*  matches zero or more sequences of abd*
+       ab∥cd* matches zero or more sequences of ab or cd
+           ^x  match x only at start of line
+       x$  match x only at end of the line
+       .   match any single character
+       ab* matches an a, followed by zero or more bs
+           \(ab\)* matches zero or more occurrences of ‘ab’.
+       (   is an ordinary character (matches itself)
+
+  * grep -E (EREs, Extended Regular Expressions)
+           (a|b)   instead a∥b
+       (       is special; parenthesized subexpression.
+
+             Q. doesn’t “zero or more” cover everything?
+         A. ‘ab*c’ matches lines with a, followed by any number of bs,
+                followed by c.
+        ‘^.*$' matches any line of characters
+
+
+Q. when a symbolic link points to another symbolic link, will the
+command follow through both symbolic links to (say) a file?
+A. Yes.  If a -> b, and b -> c, and c is a file, then ‘cat a’ is
+equivalent to ‘cat c’.
+MQ. What if a -> b and b -> a, or what if a -> a.
+MA. At most 20 links are followed in a single file name.  Any more,
+and the operating system gives up.
+funny
+543-day tailnotes.txtThisiscalleda∗dangling∗link.Q.whenasymboliclinkpointstoanothersymboliclink,willthecommandfollowthroughbothsymboliclinksto(say)afile?
+A.Yes.Ifa−>b,andb−>c,andcisafile,then‘cata′isequivalentto‘catc′.MQ.Whatifa−>bandb−>a,orwhatifa−>a.MA.
+Atmost20linksarefollowedinasinglefilename.Anymore,andtheoperatingsystemgivesup.funny544−day tail funny.name
+
+s -L says, follow symlinks
+
+ln notes.txt funny.name
+echo funny >>funny.name
+modified my notes file?
+

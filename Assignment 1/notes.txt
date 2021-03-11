@@ -1,0 +1,536 @@
+opening a specific server:
+lnxsrv10.ucla.edu
+- in putty
+
+/usr/local/cs/bin prepended to your PATH:
+export PATH=/usr/local/cs/bin$PATH
+- no spaces
+- PATH is an environment variable that contains a list of directories. These directories contain executables. 
+- When you run a command, the command line searches through all of the directories in PATH in order until it 
+	finds an executable within one of those directories whose name matches the command that you have entered. 
+- That executable is then run.
+
+When you prepend a directory to PATH, you are telling the command line to search that directory for executables 
+	before any of the other directories in PATH when a command is run. 
+- You can accomplish this using the export command (substituting in the directory to be prepended):
+	export PATH={directory_to_be_prepended}:$PATH
+- Note that a colon is used to separate directories in PATH and that $PATH references the existing value of PATH.
+
+man wget
+- man(manuel)
+- manuel for wget
+
+wget https://web.cs.ucla.edu/classes/winter21/cs97-1/assign/assign1.html
+- copy is right click
+
+mkdir
+- make directory
+
+cat assigment.html
+- checking the html
+
+cp assign1.html exer1.html
+- coppy assignemtn1.hmtl into another file called exer1.html 
+
+echo $PATH
+
+M-x open-dribble-file
+M-meta (alt)
+lab1.drip
+
+To save:
+control x
+control c
+
+rm (filename)
+
+C-g
+- quit out of a command
+
+pwd
+- print working direcoty
+.  :- current directory
+.. :- partent directory
+cd ../../ :- go to the parent's parent directory
+mkdir [directory]
+- make a new directory
+touch [file]
+- create a file
+rm [file] 
+- remove a file
+rm -r [directory]
+- remove a directory
+cp [source] [destination]
+- copy files from a source and call it (destination)
+cp -r source destination
+- copy a directory from a source
+
+C-s HTML
+
+C-s scavenger
+C-s (again)
+
+C-s self-referential
+
+C-s arrow
+C-s (again)
+C-s (again)
+C-r (if you want to go backwards)
+
+C-a
+- (to go to the beginning of the line)
+***********************************************************************************************************************************************
+Lab 1.5 Answers:
+1. Where are the mv and sh programs located in the file system?
+- (which SOME_COMMAND)
+-(I should type: mv)
+-(I should type: sh)
+mv: /usr/local/cs/bin/mv
+sh: /usr/bin/sh
+----------------------------------------------------------------------------------------------------------------------------------------------
+2. What executable programs in /usr/bin have names that are exactly two characters long and end in r, and what do they do?
+- (man -k ^[a-z]r$ or man -k ^.r$)
+ar (1)               - create, modify, and extract from archives
+ar (1p)              - create and maintain library archives
+pr (1)               - convert text files for printing
+pr (1p)              - print files
+tr (1)               - translate or delete characters
+tr (1p)              - translate characters
+----------------------------------------------------------------------------------------------------------------------------------------------
+3. When you execute the command named by the symbolic link /usr/bin/emacs, which file actually is executed?
+- (ls -l /usr/bin/emacs)
+/etc/alternatives/emacs
+----------------------------------------------------------------------------------------------------------------------------------------------
+4. What is the version number of the /usr/bin/gcc program? of the plain gcc program? Why are they different programs?
+- run 
+- (/usr/bin/gcc -v) 
+- and 
+- (gcc -v)
+- run (which gcc) to check what the plain "gcc" pointed to
+a) gcc version 4.8.5 20150623 (Red Hat 4.8.5-39) 
+b) gcc version 10.2.0
+c) They are different programs in order to support the different files in the different places, plain gcc for the /usr/local/cs/bin/gcc
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+5. The chmod program changes permissions on a file. What does the symbolic mode u+sx,o-w mean, in terms of permissions?
+- do (man chmod)
+chmod permissions:
+u	user	        owner of the file
+g	group	        members of the file's group
+o	others	        users who are neither the file's owner nor members of the file's group
+a	all	        all three of the above or same as ugo
+r	read	        permission for read only
+w	write	        permission for write only
+x	execute	        permission for execute only
+s	setuid/gid	special mode permission
+u+sx: This command sets the group ID (setgid) on the current directory, 
+means that all new files and subdirectories created inside these directory inherit the group ID of the directory, 
+rather than the primary group ID of the user who created the file. 
+This will also be passed on to new subdirectories created in the current directory.
+o-w: removes write permission for users who are neither the file's owner nor members of the file's group
+----------------------------------------------------------------------------------------------------------------------------------------------
+6. Use the find command to find all directories modified in the last four weeks that are located under (or are the same as) the directory /usr/local/cs.
+- (man find)
+- (find DIR_PATH -mtime n*24)
+	- n = days
+- (find /usr/local/cs -type d -mtime 28)
+
+
+- (find /usr/local/cs -type d -mtime 672)
+	672: 24*28
+
+/usr/local/cs/.del/coreutils-8.31/share
+/usr/local/cs/.del/coreutils-8.31/share/locale
+/usr/local/cs/.del/coreutils-8.31/share/locale/af
+/usr/local/cs/.del/coreutils-8.31/share/locale/af/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/af/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/be
+/usr/local/cs/.del/coreutils-8.31/share/locale/be/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/be/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/bg
+/usr/local/cs/.del/coreutils-8.31/share/locale/bg/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/bg/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/ca
+/usr/local/cs/.del/coreutils-8.31/share/locale/ca/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/ca/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/cs
+/usr/local/cs/.del/coreutils-8.31/share/locale/cs/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/cs/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/da
+/usr/local/cs/.del/coreutils-8.31/share/locale/da/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/da/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/de
+/usr/local/cs/.del/coreutils-8.31/share/locale/de/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/de/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/el
+/usr/local/cs/.del/coreutils-8.31/share/locale/el/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/el/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/eo
+/usr/local/cs/.del/coreutils-8.31/share/locale/eo/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/eo/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/es
+/usr/local/cs/.del/coreutils-8.31/share/locale/es/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/es/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/et
+/usr/local/cs/.del/coreutils-8.31/share/locale/et/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/et/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/eu
+/usr/local/cs/.del/coreutils-8.31/share/locale/eu/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/eu/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/fi
+/usr/local/cs/.del/coreutils-8.31/share/locale/fi/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/fi/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/fr
+/usr/local/cs/.del/coreutils-8.31/share/locale/fr/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/fr/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/ga
+/usr/local/cs/.del/coreutils-8.31/share/locale/ga/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/ga/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/gl
+/usr/local/cs/.del/coreutils-8.31/share/locale/gl/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/gl/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/hr
+/usr/local/cs/.del/coreutils-8.31/share/locale/hr/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/hr/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/hu
+/usr/local/cs/.del/coreutils-8.31/share/locale/hu/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/hu/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/ia
+/usr/local/cs/.del/coreutils-8.31/share/locale/ia/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/ia/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/id
+/usr/local/cs/.del/coreutils-8.31/share/locale/id/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/id/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/it
+/usr/local/cs/.del/coreutils-8.31/share/locale/it/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/it/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/ja
+/usr/local/cs/.del/coreutils-8.31/share/locale/ja/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/ja/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/kk
+/usr/local/cs/.del/coreutils-8.31/share/locale/kk/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/kk/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/ko
+/usr/local/cs/.del/coreutils-8.31/share/locale/ko/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/ko/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/lg
+/usr/local/cs/.del/coreutils-8.31/share/locale/lg/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/lg/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/lt
+/usr/local/cs/.del/coreutils-8.31/share/locale/lt/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/lt/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/ms
+/usr/local/cs/.del/coreutils-8.31/share/locale/ms/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/ms/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/nb
+/usr/local/cs/.del/coreutils-8.31/share/locale/nb/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/nb/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/nl
+/usr/local/cs/.del/coreutils-8.31/share/locale/nl/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/nl/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/pl
+/usr/local/cs/.del/coreutils-8.31/share/locale/pl/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/pl/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/pt
+/usr/local/cs/.del/coreutils-8.31/share/locale/pt/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/pt/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/pt_BR
+/usr/local/cs/.del/coreutils-8.31/share/locale/pt_BR/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/pt_BR/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/ro
+/usr/local/cs/.del/coreutils-8.31/share/locale/ro/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/ro/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/ru
+/usr/local/cs/.del/coreutils-8.31/share/locale/ru/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/ru/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/sk
+/usr/local/cs/.del/coreutils-8.31/share/locale/sk/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/sk/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/sl
+/usr/local/cs/.del/coreutils-8.31/share/locale/sl/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/sl/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/sr
+/usr/local/cs/.del/coreutils-8.31/share/locale/sr/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/sr/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/sv
+/usr/local/cs/.del/coreutils-8.31/share/locale/sv/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/sv/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/tr
+/usr/local/cs/.del/coreutils-8.31/share/locale/tr/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/tr/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/uk
+/usr/local/cs/.del/coreutils-8.31/share/locale/uk/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/uk/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/vi
+/usr/local/cs/.del/coreutils-8.31/share/locale/vi/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/vi/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/zh_CN
+/usr/local/cs/.del/coreutils-8.31/share/locale/zh_CN/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/zh_CN/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/locale/zh_TW
+/usr/local/cs/.del/coreutils-8.31/share/locale/zh_TW/LC_MESSAGES
+/usr/local/cs/.del/coreutils-8.31/share/locale/zh_TW/LC_TIME
+/usr/local/cs/.del/coreutils-8.31/share/info
+/usr/local/cs/.del/coreutils-8.31/share/man
+/usr/local/cs/.del/coreutils-8.31/share/man/man1
+/usr/local/cs/.del/coreutils-8.31/bin
+/usr/local/cs/.del/coreutils-8.31/libexec
+/usr/local/cs/.del/coreutils-8.31/libexec/coreutils
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+
+7. Of the files in the same directory as find, how many of them are symbolic links?
+Check the manual for find, specifically the -type option. You should have already used it for 6. 
+Try to find out what wc does. 
+(find .) will recursively find all the files in the current directory and its subdirectories and so on
+
+-(which find)
+	/usr/bin/find
+-(ls -l /usr/bin/) : looks at all the link (blue -> green)
+	-l (l for link)
+-(find /usr/bin/ -type l)
+	- to find all the links
+-(find /usr/bin/ -type l | wc -l)
+	get all the links, then count them using wc -l (word-count lines)
+or 
+-(ls -l /usr/bin/ | grep '.*->.*' -c)
+
+=292 :(lnxsr10)
+----------------------------------------------------------------------------------------------------------------------------------------------
+8. What is the oldest regular file in the /usr/lib64 directory? Use the last-modified time to determine age. 
+Specify the name of the file without the /usr/lib64/ prefix. Consider files whose names start with ".".
+- (ls -lt)
+-rw-r--r-- 1 classaad class 16752 Jan  3 23:08  assign1.html
+----------------------------------------------------------------------------------------------------------------------------------------------
+9. Where does the locale command get its data from?
+- do (man locale) search for PATH by typing '/PATH'
+ The following example compiles a custom locale from the ./wrk directory with the localedef(1) utility under the  $HOME/.locale  directory,  then  tests  the
+       result  with  the date(1) command, and then sets the environment variables LOCPATH and LANG in the shell profile file so that the custom locale will be used
+       in the subsequent user sessions:
+
+       $ mkdir -p $HOME/.locale
+       $ I18NPATH=./wrk/ localedef -f UTF-8 -i fi_SE $HOME/.locale/fi_SE.UTF-8
+       $ LOCPATH=$HOME/.locale LC_ALL=fi_SE.UTF-8 date
+       $ echo "export LOCPATH=\$HOME/.locale" >> $HOME/.bashrc
+       $ echo "export LANG=fi_SE.UTF-8" >> $HOME/.bashrc
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+10. In Emacs, what commands have (downcase) in their name?
+- (C-h a downcase)
+
+downcase-dwim                 M-x ... RET
+   Downcase words in the region, if active; if not, downcase word at
+   point.
+downcase-region               C-x C-l
+   Convert the region to lower case.  In programs, wants two
+   arguments.
+downcase-word                 M-l
+   Convert to lower case from point to end of word, moving over.
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+11. Briefly, what do the Emacs keystrokes C-M-r through C-M-v do? Can you list their actions concisely?
+(C-h c KEYSTROKES)
+
+Control-Alt-r: runs the command isearch-backward-regexp
+- To search backward for a regexp(regular expression, is a pattern that denotes a class of alternative strings to match, possibly infinitely many).
+This command reads a search string incrementally just like C-s, 
+but it treats the search string as a regexp rather than looking for an exact match against the text in the buffer. 
+Each time you add text to the search string, you make the regexp longer, and the new regexp is searched for.  
+https://ftp.gnu.org/old-gnu/Manuals/emacs-20.7/html_node/emacs_84.html#:~:text=To%20search%20backward%20for%20a,function%20in%20incremental%20regexp%20search.
+
+Control-Alt-s: runs the command isearch-forward-regexp
+- To search forward for a regexp(regular expression, is a pattern that denotes a class of alternative strings to match, possibly infinitely many). 
+This command reads a search string incrementally just like C-s, 
+but it treats the search string as a regexp rather than looking for an exact match against the text in the buffer. 
+Each time you add text to the search string, you make the regexp longer, and the new regexp is searched for.  
+
+Control-Alt-t: runs the command transpose-sexps
+-Is a similar command for transposing two expressions (see section Lists and Sexps), and C-x C-t (transpose-lines) exchanges lines. 
+They work like M-t except in determining the division of the text into syntactic units.
+- http://www-tcad.stanford.edu/local/DOC/emacs_90.html#:~:text=C%2DM%2Dt%20(%20transpose%2Dsexps%20)%20is,the%20text%20into%20syntactic%20units.
+
+Control-Alt-u: runs the command backward-up-list
+- Move up in parenthesis structure (backward-up-list).
+- https://www.gnu.org/software/emacs/manual/html_node/emacs/Moving-by-Parens.html
+
+Control-Alt-v: runs the command scroll-other-window
+- scroll the other window down and up respectively to read the help, without having to switch to that window.
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+12. In more detail, what does the Emacs keystroke C-g do?
+- (C-h c KEYSTROKES)
+- then search for more details by doing (C-h f keyboard-quit)
+
+C-g runs the command keyboard-quit
+keyboard-quit is an interactive compiled Lisp function in ‘simple.el’.
+It is bound to C-g
+(keyboard-quit)
+Signal a 'quit' condition
+During execution of Lisp code, this character causes a quit directly.
+At top-level, as an editor command, this simply beeps
+----------------------------------------------------------------------------------------------------------------------------------------------
+13. What does the Emacs yank function do, and how can you easily invoke it using keystrokes?
+-(C-h f DESCRIPTION)
+-(C-h f yank)
+It is bound to C-y
+Reinsert ("paste") in the last stretch of killed text.
+Reinsert the most recent kill, which is the stretch of text most recently killed OR yanked as retruend b7 'current-kill'
+Put point at the end, and set mark at the beginning without activating it. 
+With just C-u as argument, put point at beginning, and mark at end. 
+With argument N, reinsert the Nth most recent kill.
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+14. When looking at the directory (/usr/bin), what's the difference between the output of the (ls -l) command, 
+and the directory listing of the Emacs (dired) command?
+
+Search for dired using C-s in the emacs manual
+-run (C-x d /usr/bin) and (ls -l) to see the difference.
+
+for C-x d /usr/bin: it provides more detial like:
+	total used in directory 332112 available 8.1 GiB
+  	dr-xr-xr-x.   2 root root       69632 Jul 16 13:15 .
+  	drwxr-xr-x.  15 root root        4096 Aug 15  2018 ..
+
+
+
+pwd
+- print working directory
+
+created the junk directory in my CS97 Assigment1 folder
+emacs hello.c
+
+compiled with M-x (Alt-x)
+
+***********************************************************************************************************************************************
+1.6
+21:00 in assignment 1 help
+-(M-x compile): Alt-x compile
+	- make sure to delete the (make -k)
+-(gcc hello.c -o hello.out)
+
+4. Run the compiled program from Emacs using the M-! command, 
+	and put the program's standard output into a file named hello-a1 and its standard error into a file hello-a2.
+- redirect standard output: >
+- redirect standard error: 2>
+-(M-!): Alt-!
+-(./hello.out > hello-a1 2>hello-a2)
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+5. Same as before, except run the program with standard input being closed, and put the program's standard output and error into hello-b1 and hello-b2, 
+	respectively. 
+	Here, “closed” does not mean the standard input is an empty file; it means that standard input is not open at all, to any file.
+-standard input being closed: 0<&-
+- > : to redirect the standard output into some other file
+- < : change the standard input being something
+- 0<myfile :use content in myfile for input
+- 0 is stdin(standard input) 1 is stdout(standard output) 2 is stderr (standard error outpu)
+
+-(./hello.out 0<&- > hello-b1 2>hello-b2)
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+6. Same as before, except run the program with standard input being the file /etc/passwd, 
+	and put the program's standard output and error into hello-c1 and hello-c2.
+<: to indicate the input for the standard input
+mycommand <inputfile >outfile 2>outerr
+
+-(./hello.out </etc/passwd >hello-c1 2>hello-c2)
+----------------------------------------------------------------------------------------------------------------------------------------------
+7. Same as before, except run the program with standard input being the file /etc/passwd and standard output being the file /dev/full, 
+	and put the program's standard error into hello-d2.
+
+-(./hello.out </etc/passwd >/dev/full 2>hello-d2)
+
+
+***********************************************************************************************************************************************
+Homework-Shell scripting: 
+-(tr) : translate
+-(-c) : compliment
+- (tr -c 'A-Za-z' '[\n*]): take the compliemnt of everything that is not '' and make it \n
+-(-s) : space
+-(sort - u) :sort it uniquely, delete duplicates
+-(tr -cs 'A-Za-z' '[\n*] | sort -u | comm -23 -sorted.words) : 
+	- (comm) :takes 2 inputs to compare them
+	- (-): take first input and take the 2nd file
+-'A-Za-z'
+	set 1
+	try to match everything to that set
+	everything that matches that patter will be reservered (kept)
+	need to keep everything (everything needs to be reserverd)
+	-if I create new words there will be output
+
+
+- take all the commands we've been using (print out files, transalte characters, sort, shuffle)
+- what happens if we string them together
+- (cat /usr/share/dict/linux.words)
+	- Control-c to cancel out of it
+- (|): pipe a command, or combine multiple commands
+- (cat /usr/share/dict/linux.words | sort)
+	-C-c to cancel out
+- (cat /usr/share/dict/linux.words | sort > sorted.words)
+- (cat assign1.html | tr -c 'A-Za-z' '[\n*]')
+- (cat assign1.html | tr -cs 'A-Za-z' '[\n*]')
+- (cat assign1.html | tr -cs 'A-Za-z' '[\n*]' | sort)
+- (cat assign1.html | tr -cs 'A-Za-z' '[\n*]' | sort -u)
+- (cat assign1.html | tr -cs 'A-Za-z' '[\n*]' | sort -u | comm - sorted.words)
+- (cat assign1.html | tr -cs 'A-Za-z' '[\n*]' | sort -u | comm -23 - sorted.words)
+	- output are the words that were unique to assign1.html
+
+-create a shell script called myspell, add execute permissions
+- (emacs myspell)
+- (chmod u+x myspell) : I can execute(which is x) it
+
+- need to delete '-'
+- (man tr)
+- (tr -d -
+- inside of the shell script: (
+	
+#!/bin/bash
+tr -cs 'A-Za-z0-9-' '[\n*]' | sort -u | comm -23 - sorted.words
+
+tr -cs 'A-Za-z0-9A-Za-z-A-Za-z-' '[\n*]' | sort -u | comm -23 - sorted.words
+
+tr -cs '0-90-9-A-Za-z0-9A-Za-z-A-Za-z-' '[\n*]' | sort -u | comm -23 - sorted.words
+
+tr -cs '0-90-9-A-Za-z0-9A-Za-z-A-Za-z-:@#$%^&*()-_=/\+' '[\n*]' | sort -u | comm -23 - sorted.words
+
+tr -cs '0-90-9-A-Za-z0-9A-Za-z-A-Za-z-:!{}@#$%^&*()-_=/\+<>?' '[\n*]' | sort -u | comm -23 - sorted.words
+
+tr -cs '0-90-9-A-Za-z0-9A-Za-z-A-Za-z-:!{}@#$%^&*()-_=/\+<>?[]~`' '[\n*]' | sort -u | comm -23 - sorted.words
+
+tr -cs '0-90-9-A-Za-z0-9A-Za-z-A-Za-z-:;!{}@#$%^&*()-_=/\+<>?[]~`|"., ' '[\n*]' | sort -u | comm -23 - sorted.words
+
+tr -cs '0-90-9-A-Za-z0-9A-Za-z-A-Za-z-:;!{}@#$%^&*()-_=/\+<>?[]~`|".,A - Za - a ' '[\n*]' | sort -u | comm -23 - sorted.words
+	
+tr -cs '" ' " 0-90-9-A-Za-z0-9A-Za-z-A-Za-z-:;!{}@#$%^&*()-_=/\+<>?[]~`|.,A - Za - a ' '[\n*]' | sort -u | comm -23 - sorted.words
+
+tr -cs '0-9A-Za-z-:;!{}@#$%^&*()-_=/\+<>?[]~`|.,' '[\n*]' | tr -cs "'" | sort -u | comm -23 - sorted.words
+tr -cs '[:alnum:][:punct:]' '[\n*]' | sort -u | comm -23 - sorted.words
+	=character classes
+)
+
+-(./myspell </usr/share/dict/linux.words) :pass the myspell in and test
+
+tar -czf (...)
+	c: create
+	z: zip
+	f: file name
+tar -xzf (...)
+	x: extract
+	uniping
+
+tar -czf assign1.tgz (...)
+	gz: gun zip
+	t: tar
+
+tar -czf assign1.tgz *
+	zip all files in current directory
+	2nd item (* here)
+
+tar -tvf assign1.tgz
+	t: test
+	v: verbose
+	f: file
+	give all contents of assign1.tgz

@@ -1,0 +1,232 @@
+UCLA CS 97 lecture 2021-03-03
+
+Version control - Git - Git implementation
+
+* Secondary-storage data structure
+
+We’re talking about how to build a data structure that supports
+version control well.  It’s not like intro programming, because
+it’s not just in RAM.  The documentation says the Git data structure
+lives on files in a filesystem that is “permanent” and has atomic
+updates.  This constrains our data structure.  We want this
+data structure to survive “crashes”.  We need a failure model
+to see what sort of things this data structure is designed to prevent.
+
+ * User interrupts ‘git’.  Type control-C.  While it’s updating.
+ * You lose power in the middle of an update.
+ * Git has a bug that causes it to dump core.
+    (This last one is more problematic - we won’t address this one.)
+
+Git data structure is built atop a GNU/Linux filesystem (ext4, ...).
+Git’s reliability promises are based on the filesystem can give you.
+What promises can the filesystem make?
+
+  * If your process write data of length D to a file F at a byte offset B,
+    and a later process does a read from the same location, it
+    gets the same data.
+      (This isn’t always entirely true on modern filesystems;
+       they’re running in parallel, and some reads by other
+       processes might get the “old” version.)
+
+  * If you rename a file F to a file G, then some other process
+    is looking at the directory containing these files, it’ll
+    see either F or G, but not both (and not neither!).
+      (This is more true on modern filesystems; it’s required
+       by POSIX - the standard for Unix and Linux-like systems.)
+
+  * more in this list
+
+DB systems folks have a more-complex problem.
+We’re just trying to support version-control, which is specialized
+application.  Our data structure is simple and streamlined and designed
+for Git.
+
+
+Compression
+
+Basic idea is to unambiguously represent a long string of bytes with a
+shorter string.
+
+"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaa" long string
+"35 a1 b4 a" short string
+
+"33333333333aaa"
+"10 33 a"
+
+Q. What if your data looked liked ababab?
+A. "1 a1 b1 a1 b1 a1 b" works, but it’s longer than the original.
+   sub-question: Can one design a compression algorithm
+   that always compresses to something shorter?
+   sub-answer: NO. It’s impossible. Information theory says
+   that a message with N bits of information cannot be
+   compressed further.
+
+   Our “compression” algorithm only compresses in the “typical” case.
+   So knowing what’s “typical” is key.
+
+A. Sure, try a couple algorithms and chooses the best one.
+   This can sometimes help (though can be slower),
+   but both algorithms might expand.
+   there’s also the overhead of your output having a header
+   specifying the header.
+
+Q. When you compress a file does it do something similar to this?
+A. It depends on which compression program you use.
+   I don’t know whether .zip uses RLE; if it does, it’d use
+   it in combination with other algorithms.
+
+This particular form of encoding is called Run Length Encoding (RLE).
+We need something better than this for source code and other text.
+gzip compression as an example.  It uses two basic ideas.
+
+  * Huffman coding (David Huffman, MIT, 1952)
+      Assume the input is a sequence of symbols
+        (a byte, say, with 256 possibilities).
+      Look at all the symbols in the input file.
+        You want common symbols to have a short representation
+      (fewer than 8 bits, in our example).
+      rare symbols have a long representation (more than 8 bits)
+      010 for a ' ' space, say
+      111011010101010 for '\304', say
+      Sort these symbols by frequency (number of times they occur)
+      Build a binary tree with the leaves being the symbols,
+        and the more frequent leaves being closer to the root.
+      A fast algorithm! But you need to look at all the input.
+          O(N) N being the size of the input.
+      Output of compression is a string of bits, which is typically shorter
+      than the original.
+          Q. could you re-explain the binary tree drawing please?
+           A. another diagram.
+      gzip outputs 8 bits per byte in the obvious way. (The last byte
+        might be partial.)
+
+      For this to work, the sender (compressor) and recipient (decompressor)
+          have to agree about the tree.  An obvious way to do that,
+      is to represent the tree data structure as a short series of bytes.
+      and then ship that data structure from the sender to the
+      recipient before the start of communication.
+      A compressed file would start off with a header specifying
+      which tree to use.
+          BUT this would mean gzip would have to read its input twice,
+      one to calculate counts (and then generate the header),
+      two to output the compressed bitstring.
+
+          gzip optimizes this away by starting with a predefined tree,
+      in which all symbols are equally likely, so the tree
+      is perfectly balanced, and you get no compression.
+      It reads and outputs one symbol that way. so the recipient
+      knows how to interpret it. The compressor then updates its
+      tree internally, and uses the updated tree to read and output
+      the next symbol, and it continues to do this, so the
+      tree evolves to match the set of symbols already seen.
+
+          The recipient knows this, and does the same.
+      As a result, we compress each symbol with the assumption
+      that it has about the same probability as the symbols that
+      came before it. This approximates the utility of
+      traditional Huffman coding.
+
+          Note: if we lose/alter/insert some bytes, we’re in trouble?
+        Every byte after the lost bytes is corrupted.
+
+  * Dictionary coding
+     Look for “words” in the input, assign integers to each distinct
+     word, and then output the integers.
+
+         Now is the time for the lecture to time the  ...
+      1   2  3   4    5   3    6      7 4     3   ....
+
+          1 "Now"
+      2 " is"
+      3 " the"
+      4 " time"
+      ...
+
+      You transmit the tree, then the sequence of integers.
+
+      Harder problem than Huffman coding, because Huffman coding
+        works per-symbol, whereas dictionary coding must decide
+    how to glue together symbols into “words”.
+
+      We can use the same trick for dictionary coding that we
+      did for Huffman coding, where the sender and the recipient
+      use the same algorithm to generate the dictionary as we go.
+      Sender and recipient start off with an empty dictionary.
+      Sender reads, sends first symbol as-is (output is a mixture
+      of integers (words) and plain symbols). It updates its
+      dictionary accordingly.
+         1 "N"
+      it then repeats for each symbolm
+         1 "No"
+      we send integers only once the dictionary gets large enough.
+
+          - The dictionaries can get large (requires more memory
+          than Huffman coding)
+          - For this reason, gzip uses a "sliding window",
+         in which only the last 100 kB (say) contribute
+         to the dictionary
+
+    gzip uses both algorithms!  dictionary coding + Huffman coding on the result
+    In practice, this works well on text.
+
+Git internals
+
+   For two reasons:
+     You’re Git users and its strengths and weaknesses flow from these
+     internals.
+
+     Eventually you’ll design these kinds of data structures for your
+     own application.
+
+   Plumbing vs porcelain
+      Users typically see the porcelain.
+      What matters is the plumbing.
+      We’ll focus on the plumbing here.
+      Git experts use both (I run at the low part of porcelain level
+        interactively, but I’ll write scripts that deal with the plumbing)
+
+The .git subdirectory
+  Typically at the top level of your project; this can be configured.
+  You can have a .git subdirectory with no source files at all
+    A “bare” repository - no source easily available,
+      just history
+
+   Visit GNU emacs repository (get it yourself from savannah.gnu.org)
+     cloned from there.
+
+   Q. Isn’t it called main now?
+   A. The old GitHub default (before October 2020) branch was
+   called “master”; GitHub now defaults to “main”.  Emacs still
+   uses the old name for backwards compatibility reasons.
+   The default in Git is still “master”.
+
+   We did a Git clone of Emacs master -> cs97.
+   du∗/.git1256KiBforcs97/.git492488KiBformaster/.git du cs97/.git
+   484800 KiB for cs97/.git
+
+   Cloning locally doesn’t copy the entire repository,
+   instead, most of the files are simply linked to, via hard
+   links ‘ln master/.git/objects/bc/450b09d015739db4ccee1a04f0fe562f4d2803
+   cs97/.git/bc/450b09d015739db4ccee1a04f0fe562f4d2803’ does not
+   not copy the file’s data, just creates a pointer.  The catch
+   is that Git had better not modify the file, and Git does that!
+   It never modifies any existing file in the object part of its repository.
+   It only creates new objects; it never modifies old ones.
+   That’s why the files are read-only: it means you (and Git)
+   should not change the files.
+
+   The basic idea is that Git’s existing history should never change.
+   “You should never try to change history.” You’ll get into trouble
+   if you do.
+
+   Corollary: Since people make mistakes, so the history should
+   record the mistakes (and corrections later!).  I’ll assume
+   this philosophy.
+
+Q. What if you want to delete some commits to make your repository take up less space in memory?
+A. You can do that, if there’s just one repository and you’re in charge
+and nobody cares about the old commits.  But it’s better to think of
+Git as append-only.
+
+Q. what if you accidentally commit sensitive information (like a file with a password)?
+A. Classic newbie mistake. (Don’t put passwords into source code! Or into a Git repository.) There are ways to deal with this, sort of - but they’re inadequate. Biggest problem in my experience is copyright violations.

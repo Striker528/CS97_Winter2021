@@ -1,0 +1,335 @@
+Suppose you are trying to write a program to simplify file names. For
+example, the file name ‘/usr///lib/../bin/././bash’ is overly
+complicated, and you could just as easily use the equivalent and
+simpler file name ‘/usr/bin/bash’, because if the longer string names
+a file then the shorter string must name the same file. Consider the
+following rules for simplification:
+
+* You can replace any sequence of two or more ‘/’s with a single ‘/’.
+
+* You can replace any ‘/./’ with ‘/’.
+
+* You can replace leading ‘/../’ with ‘/’.
+
+* You can remove any sequence that consists of a file name component
+  other than ‘.’ or ‘..’, followed by ‘/’, followed by the file name
+  component ‘..’.
+
+* To simplify a file name, apply the above rules over and over again
+  to the same file name, until none of them apply.
+
+In the above rules, a “file name component” is part of a file name
+that consists of one more or non-‘/’ characters, and that is not
+adjacent to a non-‘/’ character. For simplicity, assume that newline
+characters cannot appear in file names.
+1. 
+
+* You can replace any sequence of two or more ‘/’s with a single ‘/’.
+
+* You can replace any ‘/./’ with ‘/’.
+
+* You can replace leading ‘/../’ with ‘/’.
+
+* You can remove any sequence that consists of a file name component
+  other than ‘.’ or ‘..’, followed by ‘/’, followed by the file name
+  component ‘..’.
+
+# from homework 2, see my work for example
+import argparse, string, random, sys, re
+
+ def simplify-file-names(infile):
+
+ parse = argparse.ArgumentParser()
+
+ parse.add_argument('infile', nargs='?', type=argparse.FileType('r'), default=sys.st\din, help="reads from stdin")
+
+ args = parse.parse_args()
+
+ lines = []
+
+ if args.infile:
+    for line in args.infile:
+        lines.append(line[:-1])
+
+ # manipulation
+ for line in lines:
+    if(line[0] != '.' | line[0] != '..' && line[1] == '/' && line[2] == '..')
+       delete line
+       break
+    line = re.sub('//', '/', line)
+    line = re.sub('/./', '/', line)
+    line = re.sub('/../', '/', line)
+
+ # print
+ for line in lines:
+    print(line)
+
+
+Write an Emacs Lisp function simplify-buffer-file-names that treats the current buffer as a list of file names one per line, and simplifies each file name in the buffer. 
+Your function should not change the number of lines in the current buffer. Hint: you can use re-search-forward and replace-match.
+2. 
+* You can replace any sequence of two or more ‘/’s with a single ‘/’.
+
+* You can replace any ‘/./’ with ‘/’.
+
+* You can replace leading ‘/../’ with ‘/’.
+
+* You can remove any sequence that consists of a file name component
+  other than ‘.’ or ‘..’, followed by ‘/’, followed by the file name
+  component ‘..’.
+
+(defun simplify-buffer-file-names()
+        "Simplify buffer file names"
+        (interactive)
+        (save-restriction
+          (widen)
+          (save-excursion
+            (beginning-of-line)
+            (re-search-forward('/')
+             (if('//')
+              replace-match('/'))
+             (if ('/./')
+              replace-match('/'))
+             (if ('/../')
+              replace-match('/'))
+             )))
+
+
+Without using Python, Emacs Lisp, C++, or any other general-purpose programming language, write a shell script that does the same thing as what the Python program should do. Hint: you can use ‘sed’.
+3. 
+* You can replace any sequence of two or more ‘/’s with a single ‘/’.
+
+* You can replace any ‘/./’ with ‘/’.
+
+* You can replace leading ‘/../’ with ‘/’.
+
+* You can remove any sequence that consists of a file name component
+  other than ‘.’ or ‘..’, followed by ‘/’, followed by the file name
+  component ‘..’.
+
+sed 's/['//*']/'/'/g' somefile.txt
+sed 's/['/./']/'/'/g' somefile.txt
+sed 's/['/../']/'/'/g' somefile.txt
+sed 's/[^. | ^.. | /..]/d' somefile.txt
+
+- I tried writting or, but I could not find it, so I just did |
+
+'s :for seed
+'g : for all occurrences
+'d : for delete
+
+The simplification rules are incomplete: there are pairs of file names that must refer to the same file if it exists, but which do not simplify to the same string. 
+Give an example of where the rules are incomplete, and fix the rules so that they work on your example.
+4. 
+Links
+
+Symbolic vs Hard links
+- Symlinks and hard links would have different strings
+
+- For the Symlinks need to follow
+
+- Hard links are indistinguishable from the original file
+
+
+- So for the symbolic links, it has a string of characters that refer to some file I will call 'a'
+- But hard links directly link to file a and cannot change. 
+
+The simplification rules are incorrect: they can overly simplify a file name, so that the resulting name identifies a different file from the original name. 
+Give an example of where they are incorrect, and fix the rules so that they work on your example.
+5. 
+Links
+
+- For Hard links, you cannot remove the ~ that is in front of the file, 
+So if there were more padding like the /.., we would need to still keep that file instead of deleting 
+it like in the instructions. 
+
+6.
+a gets piped into the parenthesis
+there is a program, I shall call a (b; c 2 > d)
+where:
+- standard input is a
+- standard output and standard error goes to program b
+
+2>&1 means rediret stream 2 to teh same destination that stream 1 is being directed too
+
+and another program b: (e | f)
+where:
+- standard error and stdout of (b; c 2 >d) program piped into (e | f) program
+- stdin: stdout and stederror of program a
+- stdout and stderr goes to g
+
+for the end part, >g 2 >&1
+- both stream 2 which is the standard error
+- and stream 1 which is the standard output are redirected to g
+These are the standard error adn standard output of hte (e|f) program
+
+
+7.
+For me in windows;
+I needed to install git bash
+Then I just installed the latest version of Node, not the TLS version, because I like new things
+Then I needed to create a file call tic-tac-toe
+Then in that file, I used the command
+	npx create-react-app tic-tac-toe
+That took a while, because all of the necessary files had to be created
+Then, I went into the source folder,
+	cd src
+Then I removed all the uneeded source files
+	rm *
+Then I added a file named index.css in the src/ folder with the given CSS code.
+	> index.css
+Then I added in the file
+Then I added a file named index.js in the src/ folder with this JS code.
+	> index.js
+Then I coped the code from the react website
+Add these three lines to the top of index.js in the src/ folder:
+	import React from 'react';
+	import ReactDOM from 'react-dom';
+	import './index.css';
+Then I used the command
+	npm start
+Which opens the program in my web browser
+
+8.
+You could not translate this program from JSX to Javascript.
+This is because the HTML tags at the end of the program are necessary to be able to click in the boxes
+And to organize the program, which is not possible in normal Javascript. 
+
+9.
+https://en.wikipedia.org/wiki/Packet_loss#:~:text=Packet%20loss%20occurs%20when%20one,wireless%20networks%2C%20or%20network%20congestion.
+This results in another packet having to being sent, which increases latency for the browser's user. 
+
+10. 
+The .slice() at the end of the first line creates a copy of the const squares for later use.
+So the later squares[i] can be modfied because it is a copy of the const squares, and not the const squares itself. 
+The program doesn't simply modify this.state.squares because copies of it are being made, and those copies are being edited
+This is from the Immutability of the code, as the copies that we create can be used to show the history of the plays
+But if we edited the squares directly, we could not get the history of the plays so easily and the past history would unknown. 
+
+11. 
+
+function Square(props) {
+  return (
+    <button className="square" onClick={props.onClick}>
+      {props.value}
+    </button>
+  );
+}
+
+class Board extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      squares: Array(9).fill(null),
+      xIsNext: true,
+    };
+  }
+
+  handleDoubleClick(i){
+  //*************************************************************************************
+    if ((this.state.xIsNext && (squares[i] === "X")) || (!this.state.xIsNext && (squares[i] === "O"))) {
+                //alert("Going into the part of deleting");
+                squares[i] = null;
+                this.setState({
+                     squares: squares,
+                     xIsNext: !this.state.xIsNext,
+                });   
+    }
+//*************************************************************************************************
+  }
+
+  handleClick(i) {
+    const squares = this.state.squares.slice();
+    if (calculateWinner(squares) || squares[i]) {
+      return;
+    }
+    squares[i] = this.state.xIsNext ? 'X' : 'O';
+    this.setState({
+      squares: squares,
+      xIsNext: !this.state.xIsNext,
+    });
+  }
+
+  renderSquare(i) {
+    return (
+      <Square
+        value={this.state.squares[i]}
+        onClick={() => this.handleClick(i)}
+      />
+    );
+  }
+
+  render() {
+    const winner = calculateWinner(this.state.squares);
+    let status;
+    if (winner) {
+      status = 'Winner: ' + winner;
+    } else {
+      status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
+    }
+
+    return (
+      <div>
+        <div className="status">{status}</div>
+        <div className="board-row">
+          {this.renderSquare(0)}
+          {this.renderSquare(1)}
+          {this.renderSquare(2)}
+        </div>
+        <div className="board-row">
+          {this.renderSquare(3)}
+          {this.renderSquare(4)}
+          {this.renderSquare(5)}
+        </div>
+        <div className="board-row">
+          {this.renderSquare(6)}
+          {this.renderSquare(7)}
+          {this.renderSquare(8)}
+        </div>
+      </div>
+    );
+  }
+}
+
+class Game extends React.Component {
+  render() {
+    return (
+      <div className="game">
+        <div className="game-board">
+          <Board />
+        </div>
+        <div className="game-info">
+          <div>{/* status */}</div>
+          <ol>{/* TODO */}</ol>
+        </div>
+      </div>
+    );
+  }
+}
+
+// ========================================
+
+ReactDOM.render(
+  <Game />,
+  document.getElementById('root')
+);
+
+function calculateWinner(squares) {
+  const lines = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+  ];
+  for (let i = 0; i < lines.length; i++) {
+    const [a, b, c] = lines[i];
+    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+      return squares[a];
+    }
+  }
+  return null;
+}

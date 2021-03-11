@@ -1,0 +1,292 @@
+UCLA CS 97 lecture 2021-03-01
+
+finishing up with debugging
+go back to version control (from the insides, so to speak)
+
+Last time with GDB, did the basics
+How to run a program under GDB (how to attach to a running program)
+  two processes:
+    GDB itself (it’s a program)
+    the program being debugged
+  ‘ps’ command reports both
+    the debugged program is often “frozen”: its ip is not changing
+      because you want GDB to look at it, you want to
+      see the program’s state.
+
+How do you stop the program to look at its state?
+You are looking at the program execution history:
+  time is also a dimension
+  we want some control over that dimension
+  breakpoints give us some of that control
+
+(gdb) b foo         <-- put a breakpoint at the start of ‘foo’ function
+(gdb) b bar
+(gdb) r             <-- Run, keep running until either ‘foo’ is called,
+                          or ‘bar’ is called, or the program exits.
+                i.e., foo’s first insn is executed (CS 33 says how)
+(gdb) info break    <-- list your current breakpoints
+
+Continuing and stepping
+
+(gdb) c      <-- keep going after a breakpoint (or some reason for stopping)
+(gdb) step   <-- “single” step until the source-code line changes,
+                 either by going to the next line, or by calling
+         a function, etc.
+(gdb) next   <-- “n” except let function calls finish.
+                 This lets you ignore implementation details.
+         Ignoring is a big part of GDB.
+         Breakpoints help you ignore large chunks of
+         execution history; “n” lets you ignore one line’s
+         implementation details.
+(gdb) fin    <-- “finish” - keep executing until the current function
+                 exits; like putting a temporary breakpoint on the function’s
+         return address
+
+(gdb)    <-- no command; repeats most recent command.
+
+Q. Can we see the assembly code?
+A. Yes.  “disas” disassembles the instructions
+
+Q. What’s the difference between ’n’ and ‘ni’?
+A. Like “s” and “si”.
+
+(gdb) stepi    <-- execute a single machine instruction.
+(gdb) b comm.c:490    <- break at that source-code location
+(gdb) u comm.c:490    <- either stop there, or finish the current function
+(gdb) del 3    <- delete breakpoint 3
+(gdb) del      <- delete all breakpoints
+
+
+Watchpoint
+like a breakpoint, but for data
+With a breakpoint, GDB stops the program if ip gets to be a certain value.
+  ‘step’, ‘next’, ‘fin’ are all based on that technology.
+With a watchpoint, GDB stops the program if the program state
+  (not the ip) gets to be a certain value.
+
+Q. How do we restart gdb from beginning without having to quit?
+A. I’ve been restarting the program; via the “r” or “run” command.
+To restart GDB I restart it.
+
+Q. What was gud again?
+A. gud is the Emacs Grand Unified Debugger; it’s a GUI for many debuggers,
+including GDB.
+
+GDB *could* support a watchpoint by an “are we there yet?” algorithm;
+it does a stepi over and over again and each time look at the program
+state to see whether it’s changed.  This is slow, so much modern
+hardware has limited support for hardware watchpoints - the hardware
+will watch location contents for you.  Say, 4 locations can be watched
+at a time.  GDB will use the slow algorithm if you watch too much.
+
+Q. to confirm, we set a watchpoint to a variable, but a breakpoint to
+an instruction?
+A. Yes, that’s basically it.
+
+Q. Is there a way for gdb to output each of the variables’ value? (not only 1)
+A. Only one variable can change at a time, so not much call for that.
+
+GDB also lets you watch *expressions*; this gives you lots of power
+over when a watchpoint takes effect, letting you fill out unnecessary
+detail.  These can be evaluated efficiently (with hardware support)
+if the expressions are simple enough.
+
+Q. if we are only watching 1 variable at a time, does that mean if we need to debug 5 variables, we have to rerun the program 5 times to watch for that individual variable?
+A. We can watch several variables, just as we can have breakpoints
+on several locations.  The program stops (letting GDB take control)
+whenever the first breakpoint or watchpoint is hit.
+
+Catchpoints are for languages like C++ that have exception handling.
+  You can catch a particular kind of exception.
+  GDB regains control whenever that exception is thrown.
+
+Checkpoints
+(gdb) checkpoint     <-- save the current state of the program
+                         (GDB will tell you the CHECKPOINT-ID)
+                         (data in RAM, contents of registers)
+(gdb) ...now you can run as you like...
+(gdb) restart CHECKPOINT-ID  <-- this restores the program state to that
+                                 checkpoint
+
+Breakpoints, watchpoints, catchpoints, and checkpoints are ways of
+looking through the execution history of your program.
+
+Q. Is there anyway to go back an instruction with gdb?
+A. Yes!
+(gdb) rc     <--- like “c” but you go backwards in time
+Internally, this works by GDB often taking checkpoints internally.
+This can be expensive, and it’s not enabled by default.
+Also, it doesn’t work well with large programs or with programs
+that interact with the outside world (you can’t rewind the world).
+
+Examining and changing the program state.
+
+(gdb) bt    <--- “backtrace” - list the stack return addresses
+                               to tell you how you got here
+                   Many return addresses are optimized
+                   away by TRO (tail recursion optimization)
+        bt is not always that “reliable” in that some of
+    the backtrace is optimized away
+(gdb) up    Turn GDB’s attention to caller
+(gdb) down   ”                      callee
+(gdb) p EXPR    <---“print” the value of EXPR
+         EXPR can mean just variable contents,
+     but it also can contain function calls
+     and these are executed by program being debugged
+     it can also contain direct side effects
+
+     These side effects can be used to change how your program will run.
+
+Q. does the value that p sets optind to get saved when you close gdb?
+A. No, they just affect this instance of the program.
+
+(gdb) p $rax          <-- print registers
+(gdb) info registers
+(gdb) p/x $rax   in hexadecimal
+
+Debugging is the art of navigating efficiently through
+  a complicated program execution history
+
+Version control
+
+  Originally intended for software development; nowadays applied
+    to many other system
+
+  Basic idea is to build on versioning file systems (file systems
+    that record your old versions of data, e.g, SEASnet .snapshot
+    from WAFL filesystem).  We want something, that’s better:
+       - More efficient
+       - More *useful*
+    Version control is the art of navigating efficiently through
+      a complicated program *development* history
+
+  Q.  Does git take care of version control?
+  A.  Yes, it’s a version control system, and we’ve talked and will
+       talk about it as the primary example of VC systems.
+      No, it solves only some version control problems, but
+       not all of them.
+
+  Q. If I have a git repo that only goes back, say one year, and don't
+  have earlier versions, does this mean that all is lost if I want to
+  get a current copy of the project?
+  A. If you have the last year of history, then you have the latest
+  version.  You can prune git repos if you want, to eliminate
+  versions you don’t care about; you’ll keep the latest version typically.
+
+  Some important useful features of version control:
+
+    - Keep history of software develoment (obvious).
+    - Record metadata as well as data
+         For example, whether a file is regular or a symlink or a directory.
+     Or who made the change to the file.
+     Or, when this file was changed, what other files needed
+       to be changed too, and why?
+    - File renaming is an important special case of the metadata.
+         People want to know why a file is the way it is.
+     Renaming is part of that explanation.
+    - We also need metadata about the history, as well as metadata
+         about the data.
+    - For example, in Git we can “tag” the current version, or a release.
+        This assigns a name to a particular version.
+    - We can later change our minds, and move the tag.
+    - We should record both the old and new locations for the tag.
+    - Atomic commits
+        When we change a repository, it should be all-or-nothing
+    from everybody’s point of view.  Either nothing happens
+    (because our attempt to change things failed), or it all
+    gets done (because it worked).  There is no in between.
+    - Our VC system must integrate well with the rest of our
+        software development environment.
+      + Some other software can the front end. (I use Emacs
+          as Git front end and this is easy.)
+      + Our VC system must be able to invoke other programs
+          when necessary.  E.g., pre-commit and post-commit
+          hooks in Git - let you take control while Git
+          is doing its thing, at crucial points just before
+          or just after an atomic change.
+
+              Q. What’re hooks?
+          A. A “hook” is a spot in a program where an
+             arbitrary function can be called.
+            void (*pre_commit_hook) (void) = NULL;
+
+                    git () {
+               if (pre_commit_hook)
+                 pre_commit_hook ();
+               now do the actual commit
+            }
+
+                 You can do this in the shell, etc.
+
+                    if [ -x .git/hook/pre-commit ]; then
+              .git/hook/pre-commit
+            fi
+            Now do the commit
+    - Security that works without getting in the way too much.
+        Signed commits in Git, for example.
+       You supply a cryptographic signature that proves that
+       you wanted to do this commit.
+    - Format conversion
+        MS-Windows wants CR LF at end of all source-code lines
+    GNU/Linux, macOS, etc. want just LF
+       You can (if you want) insist on Linux format.
+       But this makes things awkward for MS-Windows developers.
+    - Navigate and visualize complex histories of development
+
+
+History of version control
+
+  - SCCS - Marc Rochkind, Bell Labs, 1972.
+     Originally written for mainframes in SNOBOL
+     He rewrote it in C for Unix (64 KiB RAM tops); and mutated it to
+       use text format for histories rather than binary
+     Each file F in your source had a corresponding history file s.F
+       that recorded all of F’s versions.
+       An s.F file contained:
+          metadata at the start, giving timestamps, who, etc.,
+        plus lists of data locations
+          data (source code lines, listed in sequential order,
+            all source code lines that ever existed in F appeared here,
+        Each version of F can be represented as a sequence
+        of lines taken from the data in ascending order,
+        so you can recover any version of F by going through
+        s.F in a single pass).
+        retrieval is O(|s.F|)
+        We have a data structure “optimized” for reasonably efficient
+    retrieval on small machines
+       Q. will that history file get too large over time?
+       A. Yes, it keeps growing; luckily, large source files
+           tend to see small changes.
+
+   - Success of Unix and SCCS spawned many imitators.
+
+   - RCS - Walter Tichy, Purdue
+      Reversed deltas instead of interleaved data.
+        F,v  stored:
+       1. Metadata
+       2. Most-recent version of F appears here, as part 2 of F,v
+       3. Reverse deltas from older versions.
+       Cost of retrieving the most recent version is O(|metadata| + |F|)
+       You do need more memory to retrieve older versions.
+
+      Open-source - Free software (you can look at source code,
+         modify it, ship to your friends, all at no cost)
+
+   - CVS - Dick Grune VU Amsterdam 1985 / Brian Berliner, Prisma 1989
+      Started out as a front end for RCS (same history format)
+      Differences:
+        - Support a single atomic commit that changes a *set* of files.
+    - CVS client/server
+          CVS server records the state of the repository
+          CVS client gets versions of files,
+            requests commits to be made to files
+
+    - Subversion (Collabnet, 2000) most famous descendant.
+        used to develop Linux kernel
+
+    - Kernel guys moved to proprietary system BitKeeper in 2002
+        But it was proprietary
+    In 2005 Linus Torvalds eventually decided they needed a free version..
+     Developed Git
+
+Next time: how Git works internally

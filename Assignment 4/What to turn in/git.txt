@@ -1,0 +1,37 @@
+3. And now for a more open-ended search. The Git 2.30.1 Release Notes (2021-02-08) say 
+"Newline characters in the host and path part of git:// URL are now forbidden." 
+Which code change or changes actually made this happen, and who authored the change? 
+Do not worry about subsequent administrative changes such as merge commits; 
+look for the original changes that actually fixed the problem in question. 
+Give the SHA1 commit IDs for the relevant changes, and explain how you discovered them, all in a text file (git.txt). 
+Also generate patch files for the relevant changes, in (git format-patch) format.
+
+
+https://giclone https://github.com/git/git/ 
+
+git format-patch -1 <commitID>
+
+git log -S "Newline characters in the host and path part of git:// URL are now forbidden."
+
+git log -S "Newline characters in the host and path part of"
+	(To search for the text line that I was asked)
+
+Got 2 commits that matched the text string: d5922333 and e6362826
+
+git show d5922333
+- Can't find anything here
+- Nothing to follow in this commit. 
+
+git show e6362826
+-Has a merge id of 6aed56736b in the comment section about the newline character. 
+
+	git show 6aed56736b
+	- note says to go to the previous commit
+
+  		- need to go to previous commit: git show 6aed56736b^
+  		git log 6aed56736b^
+  		- which is the id a02ea577
+
+    			git show a02ea577
+    			- git log a02ea577
+			- nothing else to follow here, so I am finished at a02ea577

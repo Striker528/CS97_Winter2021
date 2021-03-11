@@ -1,0 +1,507 @@
+Lecture 10, 2-10-21
+
+git recap
+	quick intro from last time
+	bit more now
+		omitting most of: branches, and remotes
+
+detour into other stuff, starting today
+	backups
+	low level debugging
+
+eventually, more GIT
+	via Git internals
+
+----
+	git diff
+	git grep
+	...
+
+one more way to use Git to explore an existing project
+
+	git blame - 
+		How to blame a bug on a particular developer who introduced the it. 
+		Name was intended to be a joke.
+		A bit of software spelunking to discover *why* code is the way it is
+		- which commit introduced a change that is causing problems right now. 
+
+	emacs/src/filelock.c
+		current_lock_owner function uses ENOENT check incorrectly; why?
+			look at git blame's output, and look at the individual contributions to the buggy part of the code
+
+
+Bringing yourself up to date when following a project
+	git fetch
+		- Fetches history changes from a remote repository that's typically assumed to be more up to date than mine.
+		- This doesn't change your working files. It doens't eve nchangeth HEAD, (what yor're comparing your working files against)
+		- It merely copies repository information from upstream
+		-"upstream": repository by the original developers that they're using to publish their work.
+			There can be a whole chain of these. 
+
+	git pull
+		1. git fetch
+		2. merges the upstream changes into your repository (so it affects HEAD). 
+
+	# Can be helpful if you want to "go back" to a previous state.
+	git reset HEAD^ - go back to the previous state
+	git reset HEAD^^ - go back 2 previous states. 
+		It is also somewhat cautious by default. 
+	git reset --hard HEAD^^ - go back 2 comits, don't nag me about losing data 
+
+
+Turning our attention to diaster recovery
+
+*Development vs operations
+	- Software development - writing code, modifying code 
+	- Software operations - deploying code, configuring code, responding to user's needs 
+
+	Developers + operations staff
+		different skills
+		different staffs
+
+	DevOps movement - let's not have silos 
+		ops staff needs a little script to make users's life a lot easier 
+		developers want to write a program that be viral and will succeed
+		idea is "everybody should do both"
+		Facebook: "move fast and break things" mantra
+
+* Version control needs (for developers + ops staff)
+	- Backups in case you mess up the source code. 
+
+	- History for people wanting to know "why is this source code here?"
+		- Comments should do most of this; but let's face it, they often don't 
+			* Comments take more work, and who has the time 
+			* Author not the best judge of knowing what needs to be commented, because they are too close to the code. 
+		- How do you connect 2 different histories of a project,  because 2 team of developers worked independently for a while. 
+		- How do you relate software to the bug reports and feature requests that inspired the software? 
+		- Review code by other or same developers. 
+		- Software "archaeology". 
+
+	- Future 
+		- Plans for what changes you intended to make 
+		- Backup plans in case your plans don't work
+		- Alternate, incompatible futures (maybe they could be made compatible?)
+
+
+*Backups and disaster recovery (an ops view)
+	- Periodically copy all your files; restore from the copy on disaster. The inverse of caches. 
+	- Goal is reliability, not performance.
+	- For sanity's sake, you must have a FAILURE MODEL - the way you expect failures to occur
+		* Your flash drive in your laptop fails (lose all its data). 
+		* Your backup drive fails (lose all its data).
+		* You could have partial failures (lose some blocks of data). 
+			- Annualized Failure Rate (AFR) for consumer drives is about 3%
+		* You delete or trash files by mistake. 
+		* An oustide attacker deletes your files. 
+		* An *inside* attacker deletes your files. 
+			(SEASnet staff delets your files on SEASnet)
+	1. What's the probablity of each of these events? 
+	2. You also need a RECOVERY MODEL
+		- what do you do after bad event occurs. 
+
+
+* What to back up
+	- Contents of files
+	- File ststen data: files + directory organization + metadata
+		metadata- ownership, times, etc. 
+			'ls -l' output
+	- Alternatively, back up the blocks (low level data blocks of the underlying filesystem)
+		Simpler, though it might be less efficient
+
+	- Do you back up every change, or just some changes?
+		* you can batch your changes, and backu up only periodically
+
+	- Do you back up all the data, or just some of it?
+		Do we back up /tmp? (typically not)
+
+	-Backup locally or remotely?
+		DropBox, OneDrive etc. for backups
+
+*How do you do backups cheaply?
+
+	- When do you reclaim backup storage? 
+	- How often do you do backups? 
+	- Backups to cheaper (per byte), lower-performing devices? 
+		(flash, disk, magtape, etc.)
+
+	- Incremental backups 
+		* Don't backup everything, just backup changes since most recent backup. (decreases backup cost, increases recovery cost)
+		* An incremental backup stores a *delta* from the previous backup, so what do we mean by a *delta*?
+		* One possiblity for deltas for block level backups. 
+			Deltas: list of changed blocks (their addresses and new contents) 
+		* Another possiblity for deltas: do what 'diff' does. 
+			- deletions
+			- insertions
+			- replacements = insertions + deletions
+			This tends to work better for text. 
+			Fancier delts are also possible
+
+	- Compression of backups
+		You can spend CPU cycles to reduce the cost of backup media
+
+	- Delete files we don't need before doing backups. 
+		"automated data grooming"
+		Combing away all the data and files we don't need. 
+
+	- Deduplication - your underlying file system avoid making duplicaetsd of blocks when it can. 
+		$ cp a b #1 GB file
+		# You think this has copied data from one spot on the disk to another. 
+		#But the file system actually just creates a point from b's conents to a's. So there's jsut one copy of the data on the flash drive. 
+		
+		$ echo change >>a
+		# The file system breaks the pointer, makes a copy of a's last block, the other blocks are still shared. 
+		#Assume the block size is 8 KiB, each file is represented by an array of oints to blocks. 
+
+		This is called "Copy On Write" - we "copy" lazily only when we're forced to because the data diverged. 
+
+Aside: depublication is in some sence the inverse of backups, because 'cp a b' won't help you if yoru drive fails in spots. 
+
+	- Multiplexing - single backup device for many devices or systems. 
+
+	- Staging - you backup to one device, that device is backed up to another, cheaper device
+
+
+* How do we do our backups more reliably? 
+
+	- Test your backups! Otherwise they won't work when you need them. 
+
+	- Encryption - in case you don't trust who has physical custody of your backups. 
+
+	- Checksumming - in case backup media goes bad. 
+
+
+* Backing up software developemnt files 
+
+* File systems with versioning 
+	- Let apps (mostly) not worry about backups
+	- Let OS do it, by supplying backups automatically as part of the file system. 
+	- Used in OpenVMS, TENEX, ITS(incompatable time sharing system), ...
+	- Files-11 filesystem (used in OpenVMS)
+		notes.text;1 (Version 1 snapshot)
+		notes.text;2
+		notes.text;3
+			-- each version corresponds to notes.txt taken at some point in time (which point?: When an app closes a file)
+		Default is to create anew version on close.
+		App can disable this, by closing in a special way. 
+		You can remove versions if you like
+			'rm 'notes.txt;1''
+		There are OS-enforced limits to the number of outstanding versions 
+		Versioning is metainformation about a file. 
+
+* File system with snapshots
+	- Used in WAFL, ZFS, Btrfs. 
+	- OS periodically takes a 'snapshot' of the entire filesystem. 
+	- It will be read only. 
+	- You can look at an old snapshot to see what the files looked like back then. 
+	- Snapshots might sound expensive, but they're not, because these files use COW (copy on write) heavily. 
+
+*******************************************************************************************************************************************************
+
+UCLA CS 97 lecture 2021-02-10
+
+git recap
+  quick intro last time
+  bit more now
+    omitting most of: branches, and remotes
+
+detour into other stuff, starting today
+  backups
+  low level ebugging
+
+eventually, more Git
+  via Git internals
+
+-----
+   git diff
+   git grep
+   ...
+
+one more way to use Git to explore an existing project
+
+   git blame -
+     “How to blame a bug on a particular developer who introduced it.”
+     This name was intended to be a joke; don’t take it seriously.
+     A bit of software spelunking to discover *why* code is the way it is.
+       - Which commit introduced a change that is causing problems
+         right now.
+
+     emacs/src/filelock.c
+       current_lock_owner function uses ENOENT check incorrectly;
+       why?
+         look at git blame’s output, and look at the individual
+     contributions to the buggy part of the code
+
+Bringing yourself up to date when following a project
+
+   git fetch
+     fetch history changes from a remote repository
+       that’s typically assumed to be more up to date than you are
+     this doesn’t change your working files.
+       it doesn’t even change the HEAD, (what you’re comparing your
+       working files against)
+     it merely copies repository information from upstream
+       “upstream” - repository by the original developers that
+         they’re using to publish their work.
+       There can be a whole chain of these -
+
+   git pull
+     1. git fetch
+     2. merges the upstream changes into your repository
+         (so it affects HEAD)
+
+   # Can be helpful if you want to “go back” to a previous state.
+
+   git reset HEAD^^ - go back two commits
+      It’s also somewhat cautious by default.
+   git reset --hard HEAD^^ - got back two commits, don’t nag me
+                               about losing data.
+
+
+Q. When you share the code with multiple developers how do you do
+that? Is git local to each person?
+A. It can be local to each person, because git is at bottom
+a distributed revision control system - each developer can have
+their own copy of all the history.  These copies become out of sync,
+and we need a method to resolve that.  It’s reasonably common
+for some developers to share a copy.
+
+Q. Does this mean that git fetch may bring history of files you don't
+have copies of, if they are more recent than the last time you
+downloaded the project?
+A. Yes, and that’s important.
+
+Q. If we want to apply the recent updates we just fetched, will that
+erase our local changes since it may not be compatible anymore?
+A. Yes and no. There is a procedure for reconciling conflicts,
+and the default is cautious about removing or deleting stuff.
+
+
+
+Turning our attention to disaster recovery
+
+* Development vs operations
+  - software development - writing code, modifying code
+  - software operations - deploying code, configuring code,
+        responding directly to users’ needs
+
+  Developers + operations staff
+    different skills
+    different staffs
+
+  DevOps movement - let’s not have silos
+     ops staff needs a little script to make users’s lives a lot easier
+     developers want write a program that be viral and will succeed
+     idea is “everybody should do both”
+     “move fast and break things” mantra of Facebook
+
+* Version control needs (for developers + ops staff)
+
+  - Backups in case you mess up the source code.
+
+  - History for people wanting to know “why this source code?”
+      - Comments should do most of this; but let’s face it,
+          they often don’t
+        * comments take more work, and who has the time
+        * Author not the best judge of knowing
+           what needs to be commented,
+           because they’re too close to the code.
+      - How do you connect two different histories of a project,
+           because two teams of developers worked independently
+       for a while.
+      - How do relate software to the bug reports and
+          feature requests that inspired the software?
+      - Review code by other or same developers.
+      - Software “archaeology”.
+
+  - Future
+      - plans for what changes you intend to make
+      - backup plans in case your plans don’t work
+      - alternate, incompatible futures
+            (maybe they could be made compatible?)
+
+Q. why does git pull affect HEAD if HEAD is the big remote version?
+A. HEAD is a pointer to the “most current” version, and
+git pull merges remote changes into yours, so the result
+should be a different version.
+
+Q. How do you indicate "two commits" in that last example?
+A. Git version-numbering algebra
+       V    V^ “previous version of V”
+       V^^  “two versions before V”
+       V~37~
+
+Q. If you want to share your project with your team members using git
+how do you do that? Do you have to setup/own a server?
+A. That’s a convenient way, yes. Another way is if you’re on SEASnet,
+you ‘git clone’ from your coworker’s repository - no server needed.
+You can use GitHub etc.
+
+Q. does the git fetch change the index file, the future of your local git?
+A. No.
+
+
+
+* Backups and disaster recovery (an ops view)
+
+- Periodically copy all your files; restore from the copy on disaster.
+  - Hardware or software or human error
+- In some sense, the inverse of caches.
+  - goal is reliability, not performance
+- For sanity’s sake, you must have a FAILURE MODEL - the way
+    you expect failures to occur.
+    * Your flash drive in your laptop fails (lose all its data).
+    * Your backup drive fails (lose all its data).
+    * You could have partial failures (lose some blocks of data).
+    * You delete or trash files by mistake.
+    * An outside attacker deletes your files.
+        (someone in USC breaks into SEASnet, trashes your files)
+    * An *inside* attacker deletes your files.
+        (e.g., SEASnet staff deletes your files on SEASnet)
+  1. What’s the probability of each of these events?
+  2. You also need a RECOVERY MODEL
+       - what do you do after bad event occurs.
+
+- Annualized Failure Rate (AFR) for consumer drives is about 3%
+
+
+* What to back up
+
+   - Contents of files.
+   - File system data: files + directory organization + metadata
+        metadata - ownership, times, etc.
+      ‘ls -l’ output
+   - Alternatively, back up the blocks (low level data blocks
+        of the underlying filesystem.
+    simpler, though it might be less efficient
+
+   - Do you back up every change, or just some changes?
+       * you can batch your changes, and back up only
+           periodically
+   - Do you back up all the data, or just some of it?
+        Do we back up /tmp? (typically not)
+   - Do you backup locally or remotely?
+       DropBox OneDrive etc. for backups
+
+* How do you do backups cheaply?
+
+   - When do you reclaim backup storage?
+   - How often do you do backups?
+   - Backups to cheaper (per byte), lower-performing devices?
+        (flash, disk, magtape, etc.)
+
+   - Incremental backups.
+       * Don’t backup everything, just backup changes since
+           most recent backup.  (decreases backup cost,
+       increases recovery cost)
+       * An incremental backup stores a *delta* from the
+         previous backup, so what do we mean by a *delta*?
+       * One possibility for deltas for block level backups.
+          list of changed blocks (their addresses and new contents)
+       * Another possibility for deltas: do what ‘diff’ does.
+           - deletions
+       - insertions
+       - replacements = insertions + deletions
+         This tends to work better for text.
+     Fancier deltas are also possible
+
+    - Compression of backups
+        You can spend CPU cycles to reduce the cost of backup media
+
+    - Delete files we don’t need, before doing backups.
+       “automated data grooming”
+
+    - Deduplication - your underlying file system
+         avoids making duplicates of blocks when it can.
+
+          $ cp a b   # 1 GB file
+      # You think this has copied data from one
+      # spot on the disk to another.
+      # But the file system actually just creates
+      # a pointer from b’s contents to a’s.
+      # So there’s just one copy of the data
+      # on the flash drive.
+
+          $ echo change >>a
+      # The file system breaks the pointer, makes
+      # a copy of a’s last block, the other blocks
+      # are still shared.
+      # Assume the block size is 8 KiB,
+      # each file is represented by an an array of
+      # pointers to blocks.
+
+         This is called “Copy On Write” - we “copy” lazily,
+     only when we’re forced to because the data diverge.
+
+       Aside: deduplication is in some sense the inverse
+       of backups, because ‘cp a b’ won’t help you if your
+       drive files in spots.
+
+    - Multiplexing - single backup device for many devices or systems.
+
+    - Staging - you backup to one (faster) device,
+         that device is backed up to another, cheaper device
+
+Q. so will copy on write count the copy + original as taking up 2gb or
+just 1 gb if you didn't make the change?
+A. Just 1 GB.
+
+With COW, how do you keep track of how much disk space you’re using?
+This can get a bit trickier.
+
+
+* How do we do our backups more reliably?
+
+   - Test your backups! Otherwise they won’t work when you need them.
+
+   - Encryption - in case you don’t trust who has physical custody
+       of your backups.
+
+   - Checksumming - in case backup media goes bad.
+
+* Backing up software development files
+
+* File systems with versioning
+   - Let apps (mostly) not worry about backups.
+   - Let OS do it, by supplying backups automatically as part
+      of the file system.
+   - Used in OpenVMS, TENEX, ITS, ...
+   - Files-11 filesystem (used in OpenVMS)
+       notes.txt;1
+       notes.txt;2
+       notes.txt;3
+          -- each version corresponds to notes.txt taken at some
+      -- point of time (which point? when an app closes a file)
+      -- ‘cat notes.txt’ automatically uses the latest version
+         ‘cat 'notes.txt;2'’ uses version 2
+       Default is to create a new version on close.
+       App can disable this, by closing in a special way.
+       You can remove versions if you like
+             ‘rm 'notes.txt;1'’
+       There are OS-enforced limits to the number of outstanding
+         versions
+       Versioning is metainformation about a file.
+
+* File systems with snapshots
+   - Used in WAFL, ZFS, Btrfs.
+   - OS periodically takes a “snapshot” of the entire filesystem.
+   - It will be readonly.
+   - You can look at an old snapshot to see what the
+        files looked like back then.
+   - Snapshots might sound expensive, but they’re not,
+       because these file systems use COW heavily.
+   Let’s see an example. SEASnet uses WAFL.
+
+Q. Does copy on write slow things down when writing?
+A. Yes, because when you write a shared block for the first time, you
+need to do 1 allocate (modify some metadata) + 1 write.
+
+Q. Will that affect when doing swapping of the OS?
+A. Yes, allocation can cause thrashing (you spend more
+time doing I/O and less doing computation).
+
+Q. what do you mean by block?
+A. A 8 KiB collection of bytes, used to implement part or whole
+of a file.  (8 KiB is system-dependent.)
+
+
+Next time: version control or debugging.

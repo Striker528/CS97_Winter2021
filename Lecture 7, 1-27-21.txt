@@ -1,0 +1,367 @@
+Lecture 7, 1-27-21
+
+UCLA CS 97 lecture 2021-01-27
+
+last time: Internet protocols
+  IP, UDP, TCP - *layered* protocols (TCP atop IP)
+     TCP Transmission Control Protocol - data streams, ordered reliable byte
+                                               streams
+
+today:
+  next level of the network layer: HTTP
+  HTML etc. (main data form of the web)
+  JavaScript etc. - how to write programs for this data
+
+The World Wide Web project
+   Tim Berners-Lee CERN (1991)
+    first web server
+      https://commons.wikimedia.org/wiki/File:First_Web_Server.jpg
+    first web browser
+      http://info.cern.ch/NextBrowser.html
+
+Two basic components: HTTP and HTML
+  HTTP is the application level protocol
+    originally a very simple protocol
+      request-response protocol atop TCP
+        establish a TCP connection
+    send a request
+    get response
+    send a request
+    get response
+    ...
+
+    example using ‘telnet’ - set up a TCP connection
+       lets you send requests from stdin
+       responses via stdout
+
+    HTTP request can look like this:
+       GET url HTTP/1.1
+       Host: www.google.com
+       <empty line>
+
+    HTTP response can look like this:
+
+    Date: Wed, 27 Jan 2021 20:15:22 GMT
+    Expires: -1
+    Cache-Control: private, max-age=0
+    Content-Type: text/html; charset=ISO-8859-1 (what kind of data is in the response, how to interpet the response)
+    P3P: CP="This is not a P3P policy! See g.co/p3phelp for more info."
+    Server: gws
+    X-XSS-Protection: 0
+    X-Frame-Options: SAMEORIGIN
+    Set-Cookie: 1P_JAR=2021-01-27-20; expires=Fri, 26-Feb-2021 20:15:22 GMT; path=/; domain=.google.com; Secure
+    Set-Cookie: NID=208=OycZ2pJ_oxp2OEdASpKyIVzi5_BGb6TYI3cls8TGrL8p-9S_bUqPZzn3t3uppKwKwclgxeRlu8OWWR_I7sYjAjufm943YTk8aVmUzUoiSk_yAU_cIDCKc2l1oGLedm90JmQr8eBHyWzVL_P_eZBul_drRXeL5rnYMCIBAvv92jk; expires=Thu, 29-Jul-2021 20:15:22 GMT; path=/; domain=.google.com; HttpOnly
+    Accept-Ranges: none
+    Vary: Accept-Encoding
+    Transfer-Encoding: chunked
+        <empty line>
+    BODY OF THE RESPONSE (arbitary string of bytes)
+
+	-simple response because HTTP/1.1 is old:
+		first line: here's the protocal we agreed on (HTTP/1.1), 200: status code= everything is working
+		 ^top is header
+		rest is body, professor did not copy over
+
+wget -SO- http://www.google.som
+	S:output all the header of the response
+	O: take the response and put it into standard output
+
+
+Q. Do you prefer curl, wget or lynx?
+A. All good low-level tools; I tend to use wget but curl is very good.
+
+Q. What does proxy mean?
+A. A proxy is an intervening server that acts on a client’s behalf
+   to make requests to a server.
+     - “opaque” proxies (clients know they exist)
+     - transparent proxies (clients don’t know they exist)
+
+Q. Do proxies make you run slower?
+A. Yes and now. First time, yes. But they can cache.
+
+Q. Is a VPN a type of proxy.
+A. Not normally - it’s a virtual network.
+
+
+This example used HTTP 1.1 (1997)
+
+Nowadays, mostly superseded by HTTPS (“secure” version of HTTP)
+We saw that in Firefox: I asked for http://www.google.com
+and it redirected to https://www.google.com
+encrypts data part of the packets (harder to debug and demo)
+
+HTTP/2 (2015) - encryption is nearly pervasive
+  header compression
+  server push (server can have the initiative)
+  pipelining
+
+   Q. how does the server have the additional power to do 2 requests
+   at once? or is it back to back
+   A. Even with a single-CPU server, pipelining can still be a win
+   due to saving on network latencies.  And many modern servers can
+   service in parallel.
+
+  multiplexing
+    do several http connections “simultaneously” over a single
+      network connection
+
+HTTP/3 (202?)
+  even more multiplexing, using UDP instead of TCP
+     allow out-of-order packets
+     (really QUIC, which sort of a TCP/2 atop UDP)
+     basic problem is head-of-the-line blocking delay
+        sender (client): a, b, c, d, e
+    receiver (low lever IP level) gets: a, c, d
+      tells web server (TCP level): a
+        web server wants to see c, d, right away, but can’t because of TCP
+     rumors are that Zoom will switch to HTTP/3 (don’t quote me on this)
+     idea is that HTTP/3 can be real-timey
+
+Q. So how would zoom be different if it switches to http3? Will it be
+much faster ?
+A. We need to know what “faster” means. How much CPU/networking load
+on the Zoom servers and clients.  Perceived latency by users.  Reliability.
+
+Q. out of curiosity, what’s the solution for websites that tend to
+crash when a new retail item is released?
+A. Server overload is a real problem.  The usual solution is multiple
+web servers with load balancing and proxies for caching.
+
+Q. Is HTTPS included or extended off of HTTP? I'm confused where it
+fits into these protocols
+A. It’s a related protocol but uses a different port.  Clients and servers
+must know they’re using HTTPS.  HTTP+TLS.  For details, see Internet
+RFC 2818 <https://tools.ietf.org/html/rfc2818>.
+
+Q. what do you mean by port?
+A. Each IP packet has source and destination IP address (source host, destination host), they also have a destination port, 
+	so that a single host on the internet can support many protocols.
+       cs.ucla.edu supports http protocol on port 80
+                   supports https protocol on port 433
+
+Q. how do multiple web servers handle when an item is out of stock?
+like how do all of the servers know that the item has sold out
+A. Web servers stay in rough sync typically by talking to a common
+backend server (e.g., a database server) for shared state.
+
+Q. I know this might be a bit off topic but what do cookies mean?
+A. They’re a bit of state info, generated by the web server, and sent
+to your browser as part of the response to one of your requests.
+The intent is that your browser can send this state info in a later
+request, so that the server can understand that it’s a followup request.
+(Or, as some would put it, the server can track you.)
+
+
+HTML - second major component of WWW
+
+  SGML - Standard Generalized Markup Language
+     markup language for documents (designed by book publishers)
+                        (each had their own, which was a pain)
+       text plus important “decorations” that structure the text
+
+     two basic ideas:
+       use trees as the basic model (not just a sequence of characters)
+       declarative, not imperative (*not* a programming language)
+          NOT:  for (i = 0; i < 10; i++) print "foo %d", i
+      INSTEAD: <section 1>
+                  <section 1a>
+          Say what’s in the document, not how to display it.
+
+        <QUOTE TYPE="example">
+      OK, <ITALICS>this very text</ITALICS> is part of of a block quote.
+    </QUOTE>
+
+
+       Question: what sort of tree elements are allowed.
+       SGML answer: document-type declaration (DTD) specifies
+         what nodes are allowed in the tree.
+       one DTD for encyclopedias
+       another DTD for magazines
+       ....
+       Berners-Lee thought: another DTD for web pages
+          he made some other changes tool
+       Voila: HTML
+
+HTML
+
+   HTML element
+     represents a node in the document tree
+     in HTML, it’s surrounded by *tags*
+         <tag> ... body of the tree including subtrees ... </tag>
+        opening and closing tags are like colored parentheses
+        you can omit closing tags (this can be a bit dicey,
+           I suggest leaving them in at least at first)
+         <tag />  Represents both an opening and a closing tag
+              Represents a node with no children
+         Some elements are *void elements* and do not have a closing tag
+        <meta xxx>
+     The DTD tells you which elements are void
+
+    each element has *attributes* that belong to the node itself,
+    not to its subtrees
+        <tag attr1="value" attr2="value"> subtrees.... </tag>
+    look at class website for examples
+    where are the elements documented?
+      I tend to look at the Mozilla Development Network.
+
+        So wait a second: there’s no standard for these elements?
+    How do clients and servers agree on elements and attributes?
+
+      Originally: standardization bodies should write the DTDs
+         Standards bodies work fairly slowly, web moves quickly.
+      Attempt to attack this by modularizing HTML
+         Simple core (angle brackets, very simple elements) XML
+     Add-ons for various needs (e.g., HTML+XML)
+      So, most common now, a “living standard” -
+         almost like a wiki for what elements are allowed
+     HTML 5
+     I validate my web pages by consulting validator.w3.org
+     it runs a program on its server to check conformance
+     at the time.
+
+Q. What do you mean by tree structure?
+A. Each HTML document represents a tree (internal nodes are elements,
+     leaves are text “entities”)
+
+Q. Is this tree structure/model what we call the “DOM”?
+A. Yes! Sort of....
+
+Document Object Model (DOM)
+  each document is a tree; what we want is to access it programmatically
+    refer to elements of the tree
+    traverse the tree
+    modify the tree
+
+  APIs to do all of the above, usable from JavaScript
+    (and also from other programming languages, but JS is the most popular)
+
+Q. What does "not allowed" mean. Are there syntax rules or are some elements not allowed on certain webpages?
+A. A simple example:
+
+    <!DOCTYPE html>
+    <html lang='en>
+    <myownelement> ok </myownelement>
+    <head>
+    <title ohmygoodness='hello'>UCLA Computer Science 97, winter 2021</title>
+    </head>
+    <body>
+    </html>
+    </body>
+  Your web browser will still do something...
+    This is a two-edged sword.
+      + Your browser still works for slightly-buggy web pages.
+      + Harder to test compatibility, portability, it might work for you
+          but not for Safari.
+
+Goal: separate content from presentation
+  (we want portable web pages - display on cell phone, or big screen, ...)
+
+But: web developers want to control the presentation!
+
+Two technologies to let web devs regain control.
+
+* Cascading Style Sheets (CSS)
+    Keep separating content from presentation
+    But have a place where you can talk about presentation
+      in a declarative way (no programs)
+
+    Styles are inherited in subtress of the DOM
+       so they percolate down from parent nodes to child
+    “Cascading” because a priority scheme is used to see which style is used.
+    You can get styles from:
+       browser, user, author
+       author styles can come from:
+          inline (e.g., HTML span element)
+         <span style="font-variant: small-caps;">gdb</span>
+      media type
+      inheritance
+      rule order
+      ...
+      browser default
+
+Q. do internet protocols work differently for mobile browsers
+A. No. At least not in principle.
+
+CSS is not enough; it’s still declarative, and so requires too much
+thinking ahead and it’s not flexible enough.  We’re gonna need
+scripts (and typically, JavaScript).
+
+----- shell transcript (with one "..." to reduce length) -----
+
+501-day $ telnet www.google.com 80
+Trying 2607:f8b0:4007:80c::2004...
+Connected to www.google.com.
+Escape character is '^]'.
+GET / HTTP/1.1
+GET / HTTP/1.1
+Host: www.google.com
+Host: www.google.com
+
+
+HTTP/1.1 200 OK
+Date: Wed, 27 Jan 2021 20:15:22 GMT
+Expires: -1
+Cache-Control: private, max-age=0
+Content-Type: text/html; charset=ISO-8859-1
+P3P: CP="This is not a P3P policy! See g.co/p3phelp for more info."
+Server: gws
+X-XSS-Protection: 0
+X-Frame-Options: SAMEORIGIN
+Set-Cookie: 1P_JAR=2021-01-27-20; expires=Fri, 26-Feb-2021 20:15:22 GMT; path=/; domain=.google.com; Secure
+Set-Cookie: NID=208=OycZ2pJ_oxp2OEdASpKyIVzi5_BGb6TYI3cls8TGrL8p-9S_bUqPZzn3t3uppKwKwclgxeRlu8OWWR_I7sYjAjufm943YTk8aVmUzUoiSk_yAU_cIDCKc2l1oGLedm90JmQr8eBHyWzVL_P_eZBul_drRXeL5rnYMCIBAvv92jk; expires=Thu, 29-Jul-2021 20:15:22 GMT; path=/; domain=.google.com; HttpOnly
+Accept-Ranges: none
+Vary: Accept-Encoding
+Transfer-Encoding: chunked
+
+4ff8
+<!doctype html><html itemscope="" itemtype="http://schema.org/WebPage" lang="en"> ... </html>
+0
+
+Connection closed by foreign host.
+502-day $
+502-day $ wget -S http://www.google.com
+--2021-01-27 12:20:17--  http://www.google.com/
+Resolving www.google.com (www.google.com)... 2607:f8b0:4007:80c::2004, 172.217.11.164
+Connecting to www.google.com (www.google.com)|2607:f8b0:4007:80c::2004|:80... connected.
+HTTP request sent, awaiting response...
+  HTTP/1.1 200 OK
+  Date: Wed, 27 Jan 2021 20:20:17 GMT
+  Expires: -1
+  Cache-Control: private, max-age=0
+  Content-Type: text/html; charset=ISO-8859-1
+  P3P: CP="This is not a P3P policy! See g.co/p3phelp for more info."
+  Server: gws
+  X-XSS-Protection: 0
+  X-Frame-Options: SAMEORIGIN
+  Set-Cookie: 1P_JAR=2021-01-27-20; expires=Fri, 26-Feb-2021 20:20:17 GMT; path=/; domain=.google.com; Secure
+  Set-Cookie: NID=208=E7Ai1OZJjyX_euBby5iV1GjIjpOSlvDLB2KUkGXlXbu5BNHh2MJesWeJJBjtUMru0x7UN57qc3fLGpmU8N1jlRVb7_0nJV-vE-OIMog7c2fAY7Z36rxOEpxRfExfORY2SJAzggtzBj0CRaqAxgPJ6D83JrwnzMpmxgdcGUxHRZI; expires=Thu, 29-Jul-2021 20:20:17 GMT; path=/; domain=.google.com; HttpOnly
+  Accept-Ranges: none
+  Vary: Accept-Encoding
+  Transfer-Encoding: chunked
+Length: unspecified [text/html]
+Saving to: ‘index.html’
+
+index.html              [ <=>                ]  12.65K  --.-KB/s    in 0.01s
+
+2021-01-27 12:20:17 (925 KB/s) - ‘index.html’ saved [12949]
+
+503-day $ pwd
+/home/eggert/class/cs97/2021-winter/2021-01-27
+504-day $ wget https://www.cs.ucla.edu/classes/winter21/cs97-1/
+--2021-01-27 13:21:21--  https://www.cs.ucla.edu/classes/winter21/cs97-1/
+Resolving www.cs.ucla.edu (www.cs.ucla.edu)... 164.67.100.182
+Connecting to www.cs.ucla.edu (www.cs.ucla.edu)|164.67.100.182|:443... connected.
+HTTP request sent, awaiting response... 302 Found
+Location: http://web.cs.ucla.edu/classes/winter21/cs97-1/ [following]
+--2021-01-27 13:21:21--  http://web.cs.ucla.edu/classes/winter21/cs97-1/
+Resolving web.cs.ucla.edu (web.cs.ucla.edu)... 131.179.128.29
+Connecting to web.cs.ucla.edu (web.cs.ucla.edu)|131.179.128.29|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 3182 (3.1K) [text/html]
+Saving to: ‘index.html.1’
+
+index.html.1        100%[===================>]   3.11K  --.-KB/s    in 0s
+
+2021-01-27 13:21:21 (441 MB/s) - ‘index.html.1’ saved [3182/3182]
+
+505-day $

@@ -1,0 +1,634 @@
+UCLA CS 97 lecture 2021-01-13
+
+Punched cards predate CLIs - a punched card attitude is compatible
+  with having programming languages Fortran, C++, Java, JS.
+
+Q. What are punched cards?
+A. They contain 80 bytes encoded as punches in the cards.
+   A card deck represented a program (or data).
+
+Command-line interfaces vs. graphical user interfacts
+CLIs vs GUIs
+CLIs used to rule the roost - but we still ahve them; why?
+They're programmable - they're scriptables
+
+With CLIs you're interacting with the computer. 
+The script (or program) is fed to the computre as it runs
+
+Last time we talked about little languages
+	grep, sed, awk, she
+
+Q. Does shell mean terminal?
+A. A terminal is a device for communicating characters to the system and getting characters in response, interactivley.
+	Originally terminas were actual pieces of hardware. 24x80 charater screen + keyboard + wire to the computer.
+	Nowadays typically in software. 
+
+Shells historically existed as hacks - little languages to let you control how programs are to be run. Not that important
+Classica example: JCL (Job Control Langauge, IBM mainframes, 1960's)
+	It was an afterthought. It's a horrible language. (Worst I've ever used.)
+
+Unix 1970s. Designed a shell and then threw it away. 
+Their second design (by Steve Bourne) was a winner. 
+
+What is a shell? It's a program that reads commands (that you type, or are in a file, or are in a string), and then executes them
+Each of these commands is (typically) a seperate program, that you want to run in a particualr way (enviornment, options). 
+It's a *configuration langauge*; (set up parameters for a program) configurations are a big deal. 
+
+There are other shell. JCL, REXX, ...,...
+Today we'll look at the POSIX Shell.
+
+Aside: what's POSIX?
+	An attempt to standardize Unix-like systems. 
+	Common subset for these systems. 
+	Relatively informal - reasonable amount of pressure to conform, but not a formal test
+
+https://pubs.opengroup.org/onlinepubs/9699919799/
+
+Simplest form: you type commands, shell runs them
+	In Emacs (M-x shell Ret) causes Emacs to creat a pseudoterminal (pty) and run a shell in that terminal
+	Can run 2 terminals: 24:00 in video
+
+Each instance of the shell is a seperate process, and runs indepdently of the others. A simple way to communicate 
+
+Upwards compatible: Compatiblity is being able to run the same porgram on lots of different platforms
+	POSIX specifies a particular set of programs and options
+	For 'cat'l, it specifies the -u option which GNU cat supports. 
+	If your script uses only -u, it will run on any system that is upwards compatible with POSIX (supports all the POSIX features,
+	possibly with other features). 
+
+Mini buffer:
+	M-x
+	M-:
+
+Each instance of the shell is a seperate process, and runs indepdently of the others. A simple way to communicate from one shell to another, 
+	is to use a file. 
+
+Quoting.
+\x		Quotes x
+'abc def' 	Quotes the contained string; it can contain newlines. 
+"abc def" 	Quotes the contained string BUT after expansion of variables etc. 
+
+Assigment
+var = value
+
+Some "commands" are not programs that you run; they are reserved words that intorduce control structures. 
+
+! COMMAND	means - run COMMAND, but succeed if it fails and vice versa
+			Every program exits with an "exit status" of 0 if it succeeds, and nonzero if it fails 
+			You can see this status with the specia shell variable '$?'.
+
+{ COMMAND1; COMMAND2; } 
+	executes the commands in sequence
+
+if COMMAND1; then COMMAND2; else COMMAND3; fi
+	run COMMAND1; then COMMAND2 if it succeeded, COMMAND3 if not
+
+while COMMAND1; do COMMAND2; done
+
+until COMMAND1; do COMMAND2; done 	like while ! COMMAND1 do COMMAND2 done
+
+for var in VAL1 VAL2 ... VALN; do COMMAND; done
+
+case TOKEN in (PATTERN1) COMMAND1;; ... (PATTERNn) COMMANDn;; esac
+
+
+(! X)
+	runs X, but negate its exit status (zero vs nonzero)
+
+
+
+
+
+UCLA CS 97 lecture 2021-01-13
+502-day $ while sleep 1; do date; done
+Wed Jan 13 12:24:03 PM PST 2021
+Wed Jan 13 12:24:04 PM PST 2021
+Wed Jan 13 12:24:05 PM PST 2021
+...
+Wed Jan 13 12:28:08 PM PST 2021
+Wed Jan 13 12:28:09 PM PST 2021
+  C-c C-c
+503-day $ date
+Wed Jan 13 12:28:23 PM PST 2021
+504-day $ date --help
+Usage: date [OPTION]... [+FORMAT]
+  or:  date [-u|--utc|--universal] [MMDDhhmm[[CC]YY][.ss]]
+Display the current time in the given FORMAT, or set the system date.
+
+Mandatory arguments to long options are mandatory for short options too.
+  -d, --date=STRING          display time described by STRING, not 'now'
+      --debug                annotate the parsed date,
+                              and warn about questionable usage to stderr
+  -f, --file=DATEFILE        like --date; once for each line of DATEFILE
+  -I[FMT], --iso-8601[=FMT]  output date/time in ISO 8601 format.
+                               FMT='date' for date only (the default),
+                               'hours', 'minutes', 'seconds', or 'ns'
+                               for date and time to the indicated precision.
+                               Example: 2006-08-14T02:34:56-06:00
+  -R, --rfc-email            output date and time in RFC 5322 format.
+                               Example: Mon, 14 Aug 2006 02:34:56 -0600
+      --rfc-3339=FMT         output date/time in RFC 3339 format.
+                               FMT='date', 'seconds', or 'ns'
+                               for date and time to the indicated precision.
+                               Example: 2006-08-14 02:34:56-06:00
+  -r, --reference=FILE       display the last modification time of FILE
+  -s, --set=STRING           set time described by STRING
+  -u, --utc, --universal     print or set Coordinated Universal Time (UTC)
+      --help     display this help and exit
+      --version  output version information and exit
+
+FORMAT controls the output.  Interpreted sequences are:
+
+  %%   a literal %
+  %a   locale's abbreviated weekday name (e.g., Sun)
+  %A   locale's full weekday name (e.g., Sunday)
+  %b   locale's abbreviated month name (e.g., Jan)
+  %B   locale's full month name (e.g., January)
+  %c   locale's date and time (e.g., Thu Mar  3 23:05:25 2005)
+  %C   century; like %Y, except omit last two digits (e.g., 20)
+  %d   day of month (e.g., 01)
+  %D   date; same as %m/%d/%y
+  %e   day of month, space padded; same as %_d
+  %F   full date; like %+4Y-%m-%d
+  %g   last two digits of year of ISO week number (see %G)
+  %G   year of ISO week number (see %V); normally useful only with %V
+  %h   same as %b
+  %H   hour (00..23)
+  %I   hour (01..12)
+  %j   day of year (001..366)
+  %k   hour, space padded ( 0..23); same as %_H
+  %l   hour, space padded ( 1..12); same as %_I
+  %m   month (01..12)
+  %M   minute (00..59)
+  %n   a newline
+  %N   nanoseconds (000000000..999999999)
+  %p   locale's equivalent of either AM or PM; blank if not known
+  %P   like %p, but lower case
+  %q   quarter of year (1..4)
+  %r   locale's 12-hour clock time (e.g., 11:11:04 PM)
+  %R   24-hour hour and minute; same as %H:%M
+  %s   seconds since 1970-01-01 00:00:00 UTC
+  %S   second (00..60)
+  %t   a tab
+  %T   time; same as %H:%M:%S
+  %u   day of week (1..7); 1 is Monday
+  %U   week number of year, with Sunday as first day of week (00..53)
+  %V   ISO week number, with Monday as first day of week (01..53)
+  %w   day of week (0..6); 0 is Sunday
+  %W   week number of year, with Monday as first day of week (00..53)
+  %x   locale's date representation (e.g., 12/31/99)
+  %X   locale's time representation (e.g., 23:13:48)
+  %y   last two digits of year (00..99)
+  %Y   year
+  %z   +hhmm numeric time zone (e.g., -0400)
+  %:z  +hh:mm numeric time zone (e.g., -04:00)
+  %::z  +hh:mm:ss numeric time zone (e.g., -04:00:00)
+  %:::z  numeric time zone with : to necessary precision (e.g., -04, +05:30)
+  %Z   alphabetic time zone abbreviation (e.g., EDT)
+
+By default, date pads numeric fields with zeroes.
+The following optional flags may follow '%':
+
+  -  (hyphen) do not pad the field
+  _  (underscore) pad with spaces
+  0  (zero) pad with zeros
+  +  pad with zeros, and put '+' before future years with >4 digits
+  ^  use upper case if possible
+  #  use opposite case if possible
+
+After any flags comes an optional field width, as a decimal number;
+then an optional modifier, which is either
+E to use the locale's alternate representations if available, or
+O to use the locale's alternate numeric symbols if available.
+
+Examples:
+Convert seconds since the epoch (1970-01-01 UTC) to a date
+  $ date --date='@2147483647'
+
+Show the time on the west coast of the US (use tzselect(1) to find TZ)
+  $ TZ='America/Los_Angeles' date
+
+Show the local time for 9AM next Friday on the west coast of the US
+  $ date --date='TZ="America/Los_Angeles" 09:00 next Fri'
+
+GNU coreutils online help: <https://www.gnu.org/software/coreutils/>
+Full documentation <https://www.gnu.org/software/coreutils/date>
+or available locally via: info '(coreutils) date invocation'
+505-day $ date
+Wed Jan 13 12:28:30 PM PST 2021
+506-day $ sleep 3
+507-day $ while sleep 1
+> do
+>    date
+> done
+Wed Jan 13 12:29:49 PM PST 2021
+Wed Jan 13 12:29:50 PM PST 2021
+Wed Jan 13 12:29:51 PM PST 2021
+Wed Jan 13 12:29:52 PM PST 2021
+Wed Jan 13 12:29:53 PM PST 2021
+Wed Jan 13 12:29:54 PM PST 2021
+Wed Jan 13 12:29:55 PM PST 2021
+Wed Jan 13 12:29:56 PM PST 2021
+Wed Jan 13 12:29:57 PM PST 2021
+Wed Jan 13 12:29:58 PM PST 2021
+Wed Jan 13 12:29:59 PM PST 2021
+Wed Jan 13 12:30:00 PM PST 2021
+Wed Jan 13 12:30:01 PM PST 2021
+Wed Jan 13 12:30:02 PM PST 2021
+Wed Jan 13 12:30:03 PM PST 2021
+  C-c C-c
+508-day $ date --rfc-3339=ns
+2021-01-13 12:30:59.439119369-08:00
+509-day $ while sleep 1; do date --rfc-3339=ns; done (to do nanoseconds)
+2021-01-13 12:31:15.731569084-08:00
+2021-01-13 12:31:16.734325220-08:00
+2021-01-13 12:31:17.737204o804-08:00
+2021-01-13 12:31:18.739971502-08:00
+2021-01-13 12:31:19.741980034-08:00
+2021-01-13 12:31:20.743757777-08:00
+2021-01-13 12:31:21.745900924-08:00
+2021-01-13 12:31:22.748432793-08:00
+2021-01-13 12:31:23.751015257-08:00
+2021-01-13 12:31:24.753583294-08:00
+2021-01-13 12:31:25.756244970-08:00
+2021-01-13 12:31:26.759442625-08:00
+2021-01-13 12:31:27.762115973-08:00
+2021-01-13 12:31:28.764341842-08:00
+2021-01-13 12:31:29.766753875-08:00
+2021-01-13 12:31:30.769164007-08:00
+2021-01-13 12:31:31.771420481-08:00
+2021-01-13 12:31:32.773953571-08:00
+2021-01-13 12:31:33.776829359-08:00
+2021-01-13 12:31:34.779568012-08:00
+2021-01-13 12:31:35.782296553-08:00
+  C-c C-c
+510-day $   C-c C-c^C
+510-day $ pwd
+/home/eggert/class/cs97/2021-winter/2021-01-13
+511-day $ echo hello > world
+512-day $ echo $x
+
+513-day $ echo 'hello > world' >msg
+514-day $ cat msg
+hello > world
+515-day $ cat 'hello > world'
+cat: 'hello > world': No such file or directory
+516-day $ ls
+ msg  '#notes.txt#'   notes.txt   notes.txt~   world
+517-day $ cat #notes.txt#
+  C-c C-c
+518-day $ cat
+  C-c C-c
+519-day $ head '#notes.txt#'
+UCLA CS 97 lecture 2021-01-13
+
+Punched cards predate CLIs - a punched card attitude is compatible
+  with having programming languages Fortran, C++, Java, JS.
+
+Q. What are punched cards?
+A. They contain 80 bytes encoded as punches in the cards.
+   A card deck represented a program (or data).
+
+Command-line interfaces vs graphical user interfaces
+520-day $ echo \>
+>
+521-day $ echo hello\ \>\ world
+hello > world
+522-day $ echo \h\e\l\l\o\ \>\ world
+hello > world
+523-day $ echo 'abc def'
+abc def
+524-day $ echo abc def
+abc def
+525-day $ cat abc def
+cat: abc: No such file or directory
+cat: def: No such file or directory
+526-day $ cat 'abc def'
+cat: 'abc def': No such file or directory
+527-day $ echo '#notes.txt#' >msg
+528-day $ cat msg
+#notes.txt#
+529-day $ echo 'safasdef
+> xyzyz'
+safasdef
+xyzyz
+530-day $ echo 'It is 3 o'\''clock.'
+It is 3 o'clock.
+531-day $ x='abc def'
+532-day $ echo "The answer is: $x."
+The answer is: abc def.
+533-day $ echo 'The answer is: $x.'
+The answer is: $x.
+534-day $ echo '🦲xxx'
+🦲xxx
+535-day $ x = y
+x: command not found
+536-day $ cat = y
+cat: '=': No such file or directory
+cat: y: No such file or directory
+537-day $ x=y z
+z: command not found
+538-day $ x='y z'
+539-day $ echo $x
+y z
+540-day $ cat y
+cat: y: No such file or directory
+541-day $ echo $?
+1
+542-day $ cat /dev/null
+543-day $ echo $?
+0
+544-day $ ! cat y
+cat: y: No such file or directory
+545-day $ echo $?
+0
+546-day $ cat y
+cat: y: No such file or directory
+547-day $ status=$?
+548-day $ ...
+...: command not found
+549-day $ echo $status
+1
+550-day $ {
+> cat x
+> echo y
+> }
+cat: x: No such file or directory
+y
+551-day $ { cat x; echo y; }
+cat: x: No such file or directory
+y
+552-day $ if cat y; then echo a; else echo b; fi
+cat: y: No such file or directory
+b
+553-day $ if cat y
+> then echo a
+> else echo b
+> fi
+cat: y: No such file or directory
+b
+554-day $ ! if cat y; then echo a; else echo b; fi
+cat: y: No such file or directory
+b
+555-day $ echo $?
+1
+556-day $ if cat a; then echo a; elif cat b; then echo b; fi
+cat: a: No such file or directory
+cat: b: No such file or directory
+557-day $ for x in a b c; do cat $x; done
+cat: a: No such file or directory
+cat: b: No such file or directory
+cat: c: No such file or directory
+558-day $ cat a b c
+cat: a: No such file or directory
+cat: b: No such file or directory
+cat: c: No such file or directory
+559-day $ for x in . .. /; do ls -ld $x; done
+drwxrwxr-x 2 eggert eggert 4096 Jan 13 12:56 .
+drwxrwxr-x 7 eggert eggert 4096 Jan 13 11:54 ..
+drwxr-xr-x 26 root root 4096 Sep 21 09:49 /
+560-day $ seq 5
+1
+2
+3
+4
+5
+561-day $ echo $(seq 5)
+1 2 3 4 5
+562-day $ for i in $(seq 7); do echo This is line $i; done
+This is line 1
+This is line 2
+This is line 3
+This is line 4
+This is line 5
+This is line 6
+This is line 7
+563-day $ for v in 'abc def' g 27 '>'
+> do
+>   echo "v has value '$v'."
+> done
+v has value 'abc def'.
+v has value 'g'.
+v has value '27'.
+v has value '>'.
+564-day $ ls
+ msg  '#notes.txt#'   notes.txt   notes.txt~   world
+565-day $ for i in *
+> do
+>   case $i in
+>     (*~ | '#'*) echo "Funny name $i.";;
+>     (*)  echo "Ordinary name "$i.";;
+>   esac
+> done
+>
+>   C-c C-c^C
+566-day $ cat foolish
+for i in *
+do
+  case $i in
+    (*~ | '#'*) echo "Funny name $i.";;
+    (*)  echo "Ordinary name $i.";;
+  esac
+done
+567-day $ sh foolish
+Funny name #notes.txt#.
+Ordinary name foolish.
+Ordinary name msg.
+Ordinary name notes.txt.
+Funny name notes.txt~.
+Ordinary name world.
+568-day $ ls
+ foolish   msg    '#notes.txt#'   notes.txt   notes.txt~     world
+569-day $ ls -l /bin/sh /bin/bash
+-rwxr-xr-x 1 root root 1183448 Jun 18  2020 /bin/bash
+lrwxrwxrwx 1 root root       4 Mar 30  2020 /bin/sh -> dash
+570-day $ ls -l /bin/dash
+-rwxr-xr-x 1 root root 125720 Mar 30  2020 /bin/dash
+571-day $ bash foolish
+Ordinary name foolish.
+Ordinary name msg.
+Funny name #notes.txt#.
+Ordinary name notes.txt.
+Funny name notes.txt~.
+Ordinary name world.
+572-day $ file /bin/*
+/bin/bash:                           ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=5f8ccaaa9c0f41640ccbc461b10f2308db7dbda1, for GNU/Linux 3.2.0, stripped
+...
+/bin/zless:                          POSIX shell script, ASCII text executable
+/bin/zmore:                          POSIX shell script, ASCII text executable
+/bin/znew:                           POSIX shell script, ASCII text executable
+573-day $ ls -l /bin/znew
+-rwxr-xr-x 1 root root 4553 May 28  2020 /bin/znew
+574-day $ head /bin/znew
+#!/bin/sh
+
+# Copyright (C) 1998, 2002, 2004, 2007, 2010-2018 Free Software Foundation,
+# Inc.
+# Copyright (C) 1993 Jean-loup Gailly
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+575-day $ ls -l /bin/znew
+-rwxr-xr-x 1 root root 4553 May 28  2020 /bin/znew
+576-day $ sh optional abc -def 'ghi -jkl' '-dex yyyy'
+This argument is ordinary: abc.
+This argument begins with -: -def.
+This argument is ordinary: ghi -jkl.
+This argument begins with -: -dex yyyy.
+577-day $ sh optional - ''
+This argument begins with -: -.
+This argument is ordinary: .
+578-day $ ls
+ foolish   msg    '#notes.txt#'   notes.txt   notes.txt~     optional   world
+579-day $ ls -a
+ .    foolish  '#notes.txt#'   notes.txt    optional
+ ..   msg       .#notes.txt    notes.txt~   world
+580-day $ echo *
+foolish msg #notes.txt# notes.txt notes.txt~ optional world
+581-day $ echo *t?t*
+#notes.txt# notes.txt notes.txt~
+582-day $ echo *[a-c]*
+optional
+583-day $ echo *[^d-z]*
+#notes.txt# notes.txt notes.txt~ optional
+584-day $ cat optional
+#!/bin/sh
+
+for i
+do
+  case $i in
+    (-*) echo "This argument begins with -: $i.";;
+    (*)  echo "This argument is ordinary: $i.";;
+  esac
+done
+585-day $ sh quoting a b 'c d'
+First try::
+cat: 'a b c d': No such file or directory
+Second try::
+cat: a: No such file or directory
+cat: b: No such file or directory
+cat: 'c d': No such file or directory
+586-day $ cat quoting
+#!/bin/sh
+
+echo First try::
+cat "$*"
+
+
+echo Second try::
+cat "$@"
+587-day $ echo ${q-'abc def'}
+abc def
+588-day $ q=xyz
+589-day $ echo ${q-'abc def'}
+xyz
+590-day $ echo ${r?]
+>   C-c C-c^C
+591-day $ echo ${r?}
+bash: r: parameter not set
+592-day $ echo ${r+set}
+
+593-day $ echo ${q+set}
+set
+594-day $ echo $HOME
+/home/eggert
+595-day $ cd
+596-day $ pwd
+/home/eggert
+597-day $ echo $PATH
+/home/eggert/bin:/usr/games:/usr/local/games:/snap/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+598-day $ cd -
+/home/eggert/class/cs97/2021-winter/2021-01-13
+599-day $ echo $PWD
+/home/eggert/class/cs97/2021-winter/2021-01-13
+600-day $ unset $HOME
+bash: unset: `/home/eggert': not a valid identifier
+601-day $ unset HOME
+602-day $ cd
+bash: cd: HOME not set
+603-day $ HOME=/home/eggert
+604-day $ export HOME
+605-day $ env
+SHELL=/bin/bash
+SESSION_MANAGER=local/day:@/tmp/.ICE-unix/4854,unix/day:/tmp/.ICE-unix/4854
+QT_ACCESSIBILITY=1
+XDG_CONFIG_DIRS=/etc/xdg/xdg-ubuntu:/etc/xdg
+XDG_MENU_PREFIX=gnome-
+GNOME_DESKTOP_SESSION_ID=this-is-deprecated
+LANGUAGE=en
+MANDATORY_PATH=/usr/share/gconf/ubuntu.mandatory.path
+TERMCAP=
+GNOME_SHELL_SESSION_MODE=ubuntu
+SSH_AUTH_SOCK=/run/user/1000/keyring/ssh
+INSIDE_EMACS=26.3,comint
+_POSIX2_VERSION=200112
+XMODIFIERS=@im=ibus
+DESKTOP_SESSION=ubuntu
+H_SPELL=/dev/null
+SSH_AGENT_PID=4818
+EDITOR=emacs
+GTK_MODULES=gail:atk-bridge
+ENV=/home/eggert/.bashrc
+PWD=/home/eggert/class/cs97/2021-winter/2021-01-13
+RSYNC_RSH=ssh
+LOGNAME=eggert
+XDG_SESSION_DESKTOP=ubuntu
+XDG_SESSION_TYPE=x11
+GPG_AGENT_INFO=/run/user/1000/gnupg/S.gpg-agent:0:1
+XAUTHORITY=/run/user/1000/gdm/Xauthority
+GJS_DEBUG_TOPICS=JS ERROR;JS LOG
+WINDOWPATH=2
+j=/home/eggert/junk
+HOME=/home/eggert
+USERNAME=eggert
+b=/home/eggert/bin
+IM_CONFIG_PHASE=1
+LANG=C
+XDG_CURRENT_DESKTOP=ubuntu:GNOME
+EXINIT=set ai
+COLUMNS=80
+TMPDIR=/tmp
+INVOCATION_ID=609f72241da840e5b337d90928a82696
+NNTPSERVER=news
+MANAGERPID=4642
+INFOPATH=/usr/share/info
+GJS_DEBUG_OUTPUT=stderr
+oPATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+XDG_SESSION_CLASS=user
+TERM=dumb
+DEFAULTS_PATH=/usr/share/gconf/ubuntu.default.path
+USER=eggert
+VISUAL=emacs
+DISPLAY=:0
+SHLVL=1
+INPUTRC=/dev/null
+BASH_ENV=/home/eggert/.bashrc
+PAGER=less
+QT_IM_MODULE=ibus
+LC_MESSAGES=en_US.UTF-8
+LC_CTYPE=en_US.UTF-8
+XDG_RUNTIME_DIR=/run/user/1000
+MAILPATH=
+LC_ALL=en_US.utf8
+JOURNAL_STREAM=8:101426
+LC_COLLATE=en_US.UTF-8
+XDG_DATA_DIRS=/usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
+MAILHOST=kiwi
+PATH=/home/eggert/bin:/usr/games:/usr/local/games:/snap/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+GDMSESSION=ubuntu
+DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+LSOFPERSDCPATH=.lsof
+GIO_LAUNCHED_DESKTOP_FILE_PID=19847
+GIO_LAUNCHED_DESKTOP_FILE=/usr/share/applications/emacs.desktop
+OLDPWD=/home/eggert
+_=/usr/bin/env
+606-day $ while sleep 1; do date; done | sed 's/2021/2020'
+sed: -e expression #1, char 11: unterminated `s' command
+  C-c C-c
+607-day $ while sleep 1; do date; done | sed 's/2021/2020/'
+Wed Jan 13 01:51:37 PM PST 2020
+Wed Jan 13 01:51:38 PM PST 2020
+Wed Jan 13 01:51:39 PM PST 2020
+...

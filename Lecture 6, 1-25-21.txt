@@ -1,0 +1,678 @@
+Lecture 6, 1-25-21
+
+Emacs finish-up
+client-server (project, Node, React etc., start with background)
+
+Emacs as software development-oriented, user interface that's programmable. 
+	sh - thin layer (little language) for controlling other apps
+	Emacs Lisp - thin layer (small language) for contorlling text editor + other apps too...
+
+	augmented with bigger library having to do with UI.
+		written in C & Emacs Lisp
+			C - core interperater (simple, low level function)
+			Lisp - most of the programming is here
+
+	Some example functions in that library
+		(cons A B) - creates a pair
+		(append A B C ...) creates a list from sublists
+		(message "abc def") returns its argument, but it affects the display plus other parts of Emacs
+		(current-buffer) : just returns a buffer, lisp object, the object is the current buffer where the code is being executed
+			M-: (current-buffer) RET (seperate object for each LISP that represents different buffers where code is currently at)
+		(switch-to-buffer BUFFER) - turn Emac's (the user's) attention to that buffer
+			controlling the program that we are typing our characters in
+		(other-buffer) - the most recent buffer that is not used by the user
+		(point) - where we are in the current buffer
+		(point-min) (point-max)
+		(goto-char (some #)) :go to the character at that position
+		
+			(let ((p (point)))
+				do some stuff ...
+				(goto-char p))
+
+This init file is a combination of programs (code) + settings.
+As software devleopers, we write in:
+	programming languages
+	configuration languages
+		(in Emacs they're the same thing - Elisp)
+		(in other systems maybe not)
+
+	"extension language" - Elisp in Emacs, Javascript in a browser, ... the main action is elsewhere, but you can extend the applicaiton 
+	by wriing a bit of code in Elisp/JavaScript/...
+	They can take over, and they have taken over Emacs / Chrome / ...
+
+You can use Emacs to visit the web (M-x eww RET) (but don't do it).
+(this means JavaScript is in the mix?!?!)
+
+Client-server computing
+	Warnings: 
+		Things get faster in this section. It's a big topic. I'll need to focus on this topic when I do the project. 
+		I'll need to do both trees (Node, React libraryies... JSX syntax ...)
+			and forest (throughput, security, latency, ...)
+			and middle ground (the app that the user sees, ...)
+		There wil be things that get left undone because you won't have the time.*
+			*story of software development
+		I still need to see all 3 things. 
+		Big thing here is to get an intuition about what to foucs on. 
+		Learn by doing ... 
+
+Basic Idea from my point of view:
+	* Trees (Node/React) are built atop POSIX+sh, use ideas similar to Emacs. Plus other idea of course. 
+	* Middle ground has a lot in common with sh, Emacs. Eg: 
+		- configuration vs programming vs extension languages
+		- quoting is a big deal (" in shell, ' in Emacs, ... in JSX) 
+
+Client-server: basic model, and how it’s commonly built, pitfalls, etc..
+
+   different computing models:
+      stream processing (sh pipelines:   a|b|c)
+         batch applications
+      event-driven programming (keystrokes in Emacs, which run functions or *event handlers*, 
+				and Emacs waits for each to finish before starting the next one)
+         interactive applications (IoT apps)
+      client-server programming
+		Interclient communication is via server
+		Server has shared state
+
+      peer-to-peer architecture
+         no server; “clients” (actually, peers) just talk to each other
+     more resilient when done right
+     harder to configure, deploy
+      BitTorrent
+     Zoom, a bit. (well, not really)
+
+      lots more architectures where this came from....
+
+Assume client server for now.
+
+Performance issues
+  Throughput
+    how much data (per second) is going through the system
+       common measure is requests per second
+         (assumes all requests are the same size)
+    This is important, to minimize the amount of money you spend on servers.
+
+    Two standard ways to improve throughput.
+       * Do stuff in parallel (e.g., by having multiple servers).
+       * Do stuff “out of order” so long as the clients don’t care much.
+    There are others.
+
+  Latency
+    delay between request and response
+      minimizing this is a big deal - a lot of practice and research
+      You want to maximize user “happiness” by minimizing latency.
+
+    One standard to improve latency.
+      * Caching (e.g., clients can cache data that they retrieved from server).
+
+Correctness issues (typically come up when performance tricks are used)
+
+   * Safety of out-of-order and parallel execution
+       - *serialization*
+           - User asked to do A, B, C, D, doesn’t care about order of
+          B&C but A precedes B|C and B|C precedes D.
+       - You do A D C B.
+       - You prove that D vs B C don’t matter for this particular case.
+          it’s as if you did A C B D.
+          That’s good enough.  It’s the “as if” rule.
+          Your system behaved as if it were following the rules.
+
+   * Safety of caches.
+
+       - *cache validation* - caches on the client either exactly
+            match the server’s copy, or are good enough.
+
+             I had this problem yesterday, in release of tzdb 2021a, (time-zone database)
+         https://mm.icann.org/pipermail/tz-announce/2021-January/000065.html
+
+         had links like this:
+
+             https://www.iana.org/time-zones/repository/tzcode-latest.tar.gz
+
+          that were symlinks to tzcode2021a.tar.gz etc.
+         and these symlinks are cached
+         but the cache was out of date.
+
+Q. I don’t understand what it is. that goes at the speed of light
+A. The speed of light limits how fast Internet messages can propagate.
+
+Q. What does this timezone thing mean?
+A. https://iana.org/tz   The Internet Timezone database.
+
+Q. when I go on the cs webpage and the new assignment isn't there
+until I do control r, is that an example of an outdated cache?
+A. Yes!  In that case, the cache is probably in your web client.
+In the IANA case it was inside their server system.
+
+
+The infrastructure behind the Internet
+   a brief summary of CS 118 (like 131 for little languages, 111 for pipes/sh)
+
+Before the Internet:
+  Circuit switching.
+    You want to call NY.
+    Phone system reserved a circuit (physical pair of wires) from LA
+       to Bakersfield, another circuit from Bakersfield to LV, ...,
+       a circut from Philly to NY.
+    Then you got your phone call, with those wires still reserved.
+    *preallocation of resources*
+    Guaranteed throughput (you have all the wires)
+    Good control over latency (you have the wires reserved)
+    A lot of capacity waste, though.
+
+  Basic idea of Internet (P. Baran etc.): *packet switching*
+    Break up your digital communication into small *packets*
+    Send each packet independently, without preallocation.
+    Best-effort transmission with no guarantees
+    +More efficient use of limited capacity.
+    -Flakier.
+
+    Packets have *header* and *payloads*
+       header is metainformation meant for use in transmission
+       payload is actual content
+    Packets are exchanged via *protocols*
+       The word protocol comes from diplomacy, and follow the right form.
+    In practice, packets can be:
+       - lost (network congestion)
+       - received out of order (due to routing)
+       - duplicated (e.g., a bridge that is misconfigured ; should be a router)
+    Protocols must deal with this.
+
+
+Internet Protocol Suite (constantly evolving)
+Basic idea is *layers*
+  lowest level is *link layer* - covering a “physical circuit”
+     it’s just point-to-point, talk to the next  code in the circuit
+  Internet layer (packets)
+  application layer (for particular applications)
+
+Internet layer foundation is the Internet Protocol (IP)
+  IPv4 (1983) specified by J. Postel et al (UCLA)
+    packet based communication, connectionless
+    header contains just:
+       length
+       protocol number
+       source and destination addresses (IP addresses, 32 bits)
+       Time To Live (hop count)
+       ...
+       Sample IPv4 address is 192.168.1.9 (for my firewalled desktop at home)
+         it’s really a 32-bit number.
+
+  IPv6 (1998) has not taken over yet
+
+Q. so the reason for ipv6 is that the 32 bits of ipv4 aren’t enough to
+store the ever increasing number of ip addresses in the world?
+A. That’s one reason; there are several others.
+
+
+Atop IP, there are two major protocols.
+
+* UDP (User Datagram Protocol)
+   designed by David Reed (MIT)
+     Thin layer atop IP.
+   intended for apps that don’t need much protocol help.
+    (can handle lost packets etc. themselves)
+
+* TCP (Transmission Control Protocol)
+   designed by Vint Cerf (UCLA alum, Stanford) and Bob Kahn (Princeton)
+   stream of data built atop IP that gives you
+      reliable
+      ordered
+      error-checked
+   So it does:
+        division of stream into a sequence of packets
+    flow control
+    retransmisson and reassembly
+
+Many protocols are built atop TCP and UDP
+
+ HTTP is built atop TCP
+
+ Real-time Transport Protocol (RTP)
+   runs atop UDP
+   intended for apps where TCP would cause unacceptable jitter
+     so it’s used for Zoom!
+
+Next time: HTTP, HTML, JavaScript
+
+Q. So does a protocol generally mean a way of handling the packets?
+A. Yes, though it’s more concrete than that.  It’s a spec for the
+code that you should write if you want to send and receive packets
+according to the protocol.
+
+Q. is it possible to get an extension for the assignment?
+A. I’ll talk to the TAs tomorrow, but no promises until then.
+
+
+
+#----------------------------------------------------------------------------------------------------------------------
+UCLA CS 97 lecture 2021-01-25
+
+Emacs finish-up
+client-server (project, Node, React etc., start with background)
+
+Emacs as software development-oriented, user interface that’s programmable.
+   sh - thin layer (little language) for controlling other apps
+   Emacs Lisp - thin layer (small language) for controlling text editor +
+                                                      other apps too...
+      augmented with a bigger library having to do with UI.
+         written in C + Emacs Lisp
+        C - core interpreter (simple, low level functions)
+        Lisp - most of the programming is here
+
+  some example functions in that library
+
+     (cons A B) - creates a pair
+     (append A B C ...) creates a list from sublists#<buffer notes.txt>
+
+     (message "abc def") returns its argument, but it affects the display
+                   plus other parts of Emacs
+             C-x C-b
+             C-x f message RET
+     (current-buffer)
+          M-: (current-buffer) RET
+
+     (switch-to-buffer BUFFER) - turn Emacs’s (the user’s) attention
+         to that buffer
+
+     (other-buffer) - the "other buffer"
+
+     (point) - where we are in the current buffer
+     (point-min) (point-max)
+     (goto-char 27)
+
+       (let ((p (point)))
+         do some stuff....
+     (goto-char p))
+
+Q. The variables set are available to all. The buffers in emacs?
+A. That’s the default, yes: they’re global.  There are also
+buffer-local-variables.  C-h v indent-tabs-mode RET is an example.
+
+Q. Could you repeat what (let ((p (point))) do?
+A. See *scratch*
+
+Q. Why is there a ? before the X?
+A. Lisp uses "abc" for strings.
+        and '(a b c d) for quoting data in programs
+    and ?c for the character c (all characters are integers)
+
+Q. why is 720 or 747 returned by insert-at-start?
+A. insert-at-start returns the value of the last expression
+in the function body. So this is a question about what goto-char returns.
+C-h f goto-char RET  goto-char-returns its argument (new point value)
+
+E.g., let’s look at my Emacs initialization file.
+
+;    Id:.emacs,v1.72013/04/2806:51:11eggertExpeggert
+
+;; Added by Package.el.  This must come before configurations of
+;; installed packages.  Don't delete this line.  If you don't want it,
+;; just comment it out by adding a semicolon to the start of the line.
+;; You may delete these explanatory comments.
+(package-initialize)
+
+  ;; Mitigate bug#28350 (security) in Emacs <= 25.2.
+  (eval-after-load "enriched"
+    '(defun enriched-decode-display-prop (start end &optional param)
+       (list start end)))
+
+; (setq text-quoting-style 'grave)
+(setq x-select-enable-clipboard 't)
+(setq inhibit-startup-message t)
+(setq inhibit-startup-echo-area-message "eggert")
+
+;(setq load-path
+;      (append '("~/.emacs.d"
+;        "/usr/share/doc/git-core/contrib/emacs")
+;          load-path))
+
+(define-key esc-map "G" 'goto-line)
+(define-key esc-map "M" 'compile)
+(define-key esc-map "S" 'shell)
+
+;(put 'eval-expression 'disabled nil)
+
+(setq backup-by-copying-when-linked t)
+(setq backup-by-copying-when-mismatch t)
+(setq calendar-date-display-form
+      '(year
+         "-" (if (= 1 (length month)) "0") month
+         "-" (if (= 1 (length day)) "0") day
+         (if dayname (concat " (" (substring dayname 0 3) ")"))))
+(setq calendar-time-display-form
+      '(24-hours ":" minutes (if time-zone " (") time-zone (if time-zone ")")))
+(setq compile-command "make ")
+(setq completion-ignored-extensions '("#" "%" ".class" ".elc" ".o" "~"))
+(setq debbugs-gnu-default-packages '("coreutils" "emacs"))
+(setq diff-switches '("-pu"))
+(setq enable-local-variables ':safe)
+(setq imagemagick-types-inhibit t)
+(setq mail-from-style 'system-default)
+(setq mail-host-address "cs.ucla.edu")
+(setq mail-yank-prefix "> ")
+(setq mouse-yank-at-point t)
+(setq mail-use-rfc822 t)
+;(setq outline-regexp "    *")
+(setq query-replace-highlight t)
+(setq require-final-newline 0)
+(setq shell-popd-regexp "\\(popd\\|po\\)")
+(setq shell-pushd-regexp "\\(pushd\\|pd\\)")
+(setq vc-consult-headers nil)
+(setq vc-initial-comment t)
+(setq visible-bell t)
+(setq write-region-inhibit-fsync t)
+
+(add-hook 'find-file-hook
+      '(lambda ()
+         (if (and buffer-file-name
+              (or (string-match "/src/gnu/bison" (buffer-file-name))
+              (string-match "/src/gnu/cu" (buffer-file-name))
+              (string-match "/src/gnu/gnulib" (buffer-file-name))
+              (string-match "/src/gnu/grep" (buffer-file-name))
+              (string-match "/src/gnu/gzip" (buffer-file-name)))
+              (not (string-equal mode-name "Change Log"))
+              (not (string-equal mode-name "Makefile")))
+         (setq indent-tabs-mode nil))))
+
+;; Use aspell, not ispell.
+(setq-default ispell-program-name "aspell")
+
+;(require 'whitespace)
+(setq whitespace-action '(auto-cleanup))
+(setq whitespace-style '(trailing empty))
+(global-whitespace-mode t)
+
+(if (fboundp 'electric-quote-mode)
+    (electric-quote-mode))
+
+(prefer-coding-system 'utf-8)
+;(custom-set-variables '(load-home-init-file t t))
+;(custom-set-faces)
+(custom-set-variables
+ '(load-home-init-file t t))
+(custom-set-faces)
+
+
+This init file is a combination of programs (code) + settings.
+As software developers, we write in:
+   programming languages
+   configuration languages
+      (in Emacs they’re the same thing - Elisp)
+      (in other systems maybe not)
+
+   “extension language” - Elisp in Emacs, JavaScript in a browser, ....
+      the main action is elsewhere, but you can extend the application
+        by writing a bit of code in Elisp/JavaScript/...
+      They can take over, and they have taken over Emacs / Chrome / ...
+
+You can use Emacs to visit the web M-x eww RET (but I don’t).
+(this means JavaScript is in the mix?!?!)
+
+
+Client-server computing
+   Warnings:
+     Things get faster in this section.  It’s a big topic.
+     You’ll need to focus on this topic when you do the project.
+     You’ll need to do both trees (Node React libraries.... JSX syntax ...)
+                        and forest (throughput, security, latency, ....)
+                        and middle ground (the app that the user sees, ....)
+     There will be things that get left undone because you won’t have the time.*
+        *story of software development
+     You still need to see all three things....
+        Big thing here is to get an intuition about what to focus on.
+    Learn by doing ...
+
+Basic idea from our point of view:
+   * Trees (Node/React) are built atop POSIX+sh, use ideas similar to Emacs.
+        plus other ideas of course.
+   * Middle ground has a lot in common with sh, Emacs, e.g.:
+              - configuration vs programming vs extension language
+          - quoting is a big deal (" in shell, ' in Emacs, ... in JSX)
+
+also, I have a confession to make:
+  * I’m no expert on Node, React.
+  * You need to gain experience in learning software systems quickly,
+      and you’ve done that for sh, Emacs.
+      Now do it for Node, etc.
+  * There is a lot of tutorial material on Node / React / etc....
+      It often assumes you know what you’re doing (CS expert)
+      or it’s for complete newbies (an inefficient way to learn).
+  * What’s often missing in this material:
+      engineering background behind Node/React/etc. apps
+      This is what I want to talk about for the rest of the day.
+
+Client-server: basic model, and how it’s commonly built, pitfalls, etc..
+
+   different computing models:
+      stream processing (sh pipelines:   a|b|c)
+         batch applications
+      event-driven programming (keystrokes in Emacs, which run functions
+                                   or *event handlers*, and Emacs waits
+                   for each to finish before starting
+                   the next one)
+         interactive applications (IoT apps)
+      client-server programming
+
+      peer-to-peer architecture
+         no server; “clients” (actually, peers) just talk to each other
+     more resilient when done right
+     harder to configure, deploy
+      BitTorrent
+     Zoom, a bit. (well, not really)
+
+      lots more architectures where this came from....
+
+Assume client server for now.
+
+Performance issues
+  Throughput
+    how much data (per second) is going through the system
+       common measure is requests per second
+         (assumes all requests are the same size)
+    This is important, to minimize the amount of money you spend on servers.
+
+    Two standard ways to improve throughput.
+       * Do stuff in parallel (e.g., by having multiple servers).
+       * Do stuff “out of order” so long as the clients don’t care much.
+    There are others.
+
+  Latency
+    delay between request and response
+      minimizing this is a big deal - a lot of practice and research
+      You want to maximize user “happiness” by minimizing latency.
+
+    One standard to improve latency.
+      * Caching (e.g., clients can cache data that they retrieved from server).
+
+Correctness issues (typically come up when performance tricks are used)
+
+   * Safety of out-of-order and parallel execution
+       - *serialization*
+           - User asked to do A, B, C, D, doesn’t care about order of
+          B&C but A precedes B|C and B|C precedes D.
+       - You do A D C B.
+       - You prove that D vs B C don’t matter for this particular case.
+          it’s as if you did A C B D.
+          That’s good enough.  It’s the “as if” rule.
+          Your system behaved as if it were following the rules.
+
+   * Safety of caches.
+
+       - *cache validation* - caches on the client either exactly
+            match the server’s copy, or are good enough.
+
+             I had this problem yesterday, in release of tzdb 2021a,
+         https://mm.icann.org/pipermail/tz-announce/2021-January/000065.html
+
+         had links like this:
+
+             https://www.iana.org/time-zones/repository/tzcode-latest.tar.gz
+
+          that were symlinks to tzcode2021a.tar.gz etc.
+         and these symlinks are cached
+         but the cache was out of date.
+
+Q. I don’t understand what it is. that goes at the speed of light
+A. The speed of light limits how fast Internet messages can propagate.
+
+Q. What does this timezone thing mean?
+A. https://iana.org/tz   The Internet Timezone database.
+
+Q. when I go on the cs webpage and the new assignment isn't there
+until I do control r, is that an example of an outdated cache?
+A. Yes!  In that case, the cache is probably in your web client.
+In the IANA case it was inside their server system.
+
+
+The infrastructure behind the Internet
+   a brief summary of CS 118 (like 131 for little languages, 111 for pipes/sh)
+
+Before the Internet:
+  Circuit switching.
+    You want to call NY.
+    Phone system reserved a circuit (physical pair of wires) from LA
+       to Bakersfield, another circuit from Bakersfield to LV, ...,
+       a circut from Philly to NY.
+    Then you got your phone call, with those wires still reserved.
+    *preallocation of resources*
+    Guaranteed throughput (you have all the wires)
+    Good control over latency (you have the wires reserved)
+    A lot of capacity waste, though.
+
+  Basic idea of Internet (P. Baran etc.): *packet switching*
+    Break up your digital communication into small *packets*
+    Send each packet independently, without preallocation.
+    Best-effort transmission with no guarantees
+    +More efficient use of limited capacity.
+    -Flakier.
+
+    Packets have *header* and *payloads*
+       header is metainformation meant for use in transmission
+       payload is actual content
+    Packets are exchanged via *protocols*
+       The word protocol comes from diplomacy, and follow the right form.
+    In practice, packets can be:
+       - lost (network congestion)
+       - received out of order (due to routing)
+       - duplicated (e.g., a bridge that is misconfigured ; should be a router)
+    Protocols must deal with this.
+
+
+Internet Protocol Suite (constantly evolving)
+Basic idea is *layers*
+  lowest level is *link layer* - covering a “physical circuit”
+     it’s just point-to-point
+  Internet layer (packets)
+  application layer (for particular applications)
+
+Internet layer foundation is the Internet Protocol (IP)
+  IPv4 (1983) specified by J. Postel et al (UCLA)
+    packet based communication, connectionless
+    header contains just:
+       length
+       protocol number
+       source and destination addresses (IP addresses, 32 bits)
+       Time To Live (hop count)
+       ...
+       Sample IPv4 address is 192.168.1.9 (for my firewalled desktop at home)
+         it’s really a 32-bit number.
+
+  IPv6 (1998) has not taken over yet
+
+Q. so the reason for ipv6 is that the 32 bits of ipv4 aren’t enough to
+store the ever increasing number of ip addresses in the world?
+A. That’s one reason; there are several others.
+
+
+Atop IP, there are two major protocols.
+
+* UDP (User Datagram Protocol)
+   designed by David Reed (MIT)
+     Thin layer atop IP.
+   intended for apps that don’t need much protocol help.
+    (can handle lost packets etc. themselves)
+
+* TCP (Transmission Control Protocol)
+   designed by Vint Cerf (UCLA alum, Stanford) and Bob Kahn (Princeton)
+   stream of data built atop IP that tives you
+      reliable
+      ordered
+      error-checked
+   So it does:
+        division of stream into a sequence of packets
+    flow control
+    retransmisson and reassembly
+
+Many protocols are built atop TCP and UDP
+
+ HTTP is built atop TCP
+
+ Real-time Transport Protocol (RTP)
+   runs atop UDP
+   intended for apps where TCP would cause unacceptable jitter
+     so it’s used for Zoom!
+
+Next time: HTTP, HTML, JavaScript
+
+Q. So does a protocol generally mean a way of handling the packets?
+A. Yes, though it’s more concrete than that.  It’s a spec for the
+code that you should write if you want to send and receive packets
+according to the protocol.
+
+Q. is it possible to get an extension for the assignment?
+A. I’ll talk to the TAs tomorrow, but no promises until then.
+
+
+
+----- *scratch* contents at end -----
+
+YX;; This buffer is for text that is not saved, and for Lisp evaluation.
+;; To create a file, visit it with C-x C-f and enter text in its buffer.
+
+(cons 3 4)
+(3 . 4)
+(cons 3 '(4 5))
+(3 4 5)
+(append '(3 4 5) '(a b "x" (c d)))
+(3 4 5 a b "x" (c d))
+(append '(3 4 5) '(a b "x" (c d)) '() '(a b c))
+(3 4 5 a b "x" (c d) a b c)
+
+(message "hello world")
+"hello world"
+
+(current-buffer)
+#<buffer *scratch*>
+
+(setq abc (current-buffer))
+#<buffer *scratch*>
+
+def
+#<buffer notes.txt>
+(switch-to-buffer def)
+
+
+(switch-to-buffer (other-buffer))  - switched the *Help* buffer.
+
+(defun insert-at-start (c)
+  (let ((p (point)))
+    (goto-char (point-min))
+    (insert c)
+    (goto-char (+ p 1))))
+insert-at-start
+
+(insert-at-start ?X)
+720
+
+(insert-at-start ?Y)
+747
+?X
+88
+?⏦
+9190
+(setq x ?⏦)
+9190
+(setq y 9190)
+9190
+(= x y)
+t

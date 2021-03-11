@@ -1,0 +1,169 @@
+CS 97 – Dis 1A – Week 1
+=======================
+
+
+ANNOUNCEMENTS – "rules of the game"
+-------------
+    • workload
+        • ~6 assignments (~25%)
+        • midterm (~15%)
+        • group project (~35%)
+            • groups of 5 members, to limit number of projects
+        • final (~25%)
+    • late submissions will have 2^(N-1)% penalty
+    • assignment grading is kept fairly lenient
+        • no auto grading scripts
+        • we only check if submission makes a "reasonable" attempt
+        • "minor" deviations, mistakes, etc are ignored; not critical
+        • focus on thorough understanding; avoid assignment anxiety
+    • assignment 1 is already available
+        • https://web.cs.ucla.edu/classes/winter21/cs97-1/assign/assign1.html
+        • due on 15th Jan, 11.55pm ucla time
+        • assignment submission link is up on ccle (under week 2)
+            • https://ccle.ucla.edu/mod/assign/view.php?id=3563091
+
+
+WORKSPACE SETUP – "we change our tools and then they change us - jeff bezos"
+---------------
+    • seasnet account
+        • https://www.seasnet.ucla.edu/seasnet-accounts/
+    • vpn client
+        • https://www.it.ucla.edu/it-support-center/services/virtual-private-network-vpn-clients
+    • seasnet linux servers
+        • https://www.seasnet.ucla.edu/lnxsrv/
+    • blog by one ex-la
+        • https://nathansmith.io/posts/lnxsrv-tips/
+    • playgrounds
+        • https://repl.it/
+        • https://codesandbox.io/
+    • windows specific
+        • https://docs.microsoft.com/en-us/windows/wsl/install-win10
+        • https://gitforwindows.org/
+        • https://www.putty.org/
+        • https://www.seasnet.ucla.edu/putty/
+        • https://www.seasnet.ucla.edu/xming
+        • http://laptops.eng.uci.edu/software-installation/using-linux/how-to-configure-xming-putty
+        • http://www.straightrunning.com/XmingNotes/
+        • https://cyberduck.io/
+        • https://filezilla-project.org/
+        • https://winscp.net/eng/download.php
+    • macos specific
+        • https://en.wikipedia.org/wiki/Terminal_(macOS)
+        • https://iterm2.com/
+        • https://www.xquartz.org/
+        • https://cyberduck.io/
+        • https://panic.com/transmit/
+        • https://filezilla-project.org/
+
+
+SOFTWARE CONSTRUCTION – "software is eating the world – marc andreessen"
+---------------------
+    • what?
+        • code
+        • assets (images, videos, gifs, fonts, etc)
+        • documentation
+        • license
+        • "files" truly are the building blocks
+    • where?
+        • operating system
+            • file system
+            • shell (gui / cli)
+                • text editors
+                • IDEs
+                • utilities
+                    • scripts
+                    • compilers, interpreters, misc tools
+
+
+SHELL BASICS – "shell is powerful; been around for >30 years"
+------------
+    • https://www.shellscript.sh/
+    • https://www.gnu.org/software/bash/manual/html_node/index.html
+    • name (shell) itself is a helpful indicator of form and function
+    • interpreted environment
+    • reads in the latest entered line and executes line by line
+    • makes for an interactive experience
+    • facilitates user interaction with the operating system
+    • command based interaction
+    • simpler, reliable and more predictable than graphics based
+    • allows one to automate, configure, customize, program
+    • line editor
+        • ctrl-a, ctrl-b, ctrl-d, ctrl-e, ctrl-f, ctrl-h
+        • ctrl-k, ctrl-l, ctrl-n, ctrl-p, ctrl-r, ctrl-u, ctrl-w
+    • process control
+        • ctrl-c, ctrl-d, ctrl-z
+    • 1st set of commands
+        • help
+        • whoami
+        • pwd, ls, cd
+        • man
+        • cp, mv, rm, ln, touch
+        • type, file, command
+        • cat
+        • find
+        • env, printenv, locale
+        • echo, export
+        • date
+        • vim, nano
+        • ctrl-z, jobs, bg, fg
+        • ps, kill, killall
+        • wget, curl
+        • emacs
+
+
+EMACS BASICS – "OG of IDEs"
+------------
+    • https://www2.lib.uchicago.edu/keith/tcl-course/emacs-tutorial.html
+    • https://www.gnu.org/software/emacs/manual/html_node/emacs/index.html
+    • start, close/quit
+    • access help, tutorial
+    • buffers, windows, files
+    • editor area, mode/status line, command line
+    • split / hide windows (C-x 0, C-x 1, etc.)
+    • list open buffers (C-x C-b)
+    • switch to a buffer (C-x b)
+    • kill buffer (C-x k)
+    • open a file (C-x f)
+    • write buffer to file, i.e. save (C-x s)
+    • navigation (C-a, C-e, C-b, C-f, C-n, C-p)
+    • cut, copy, paste, delete (C-k, M-w, C-y, C-d/C-h)
+    • search (C-s, C-r)
+    • execute an emacs command / action (like M-x shell, etc.)
+    • special buffers (scratch, messages, buffer list, etc.)
+    • https://www.gnu.org/software/emacs/refcards/pdf/refcard.pdf
+
+
+SHELL SCRIPTING
+---------------
+    • https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html
+    • https://www.gnu.org/software/bash/manual/html_node/Concept-Index.html#Concept-Index
+    • composing / chaining programs
+        • pipes
+        • redirection
+    • flow of data / information
+        • stdin
+        • stdout
+        • stderr
+    • scripting enables much finer orchestration and reuse
+        • some of the typical programming language constructs
+            • variables (limited data types)
+            • functions
+            • flow of control
+                • loops
+                • conditionals
+        • variable substitution, process substituion
+        • additional environment variables
+            • $0, $1, $2, $#, $@
+        • instead of standard library there's standard utilities
+            • core-utils
+                • https://www.gnu.org/software/coreutils/manual/html_node/index.html
+                • cat, fmt, fold, wc, sum
+                • grep, sort, shuf, uniq, comm
+                • cut, paste, join
+                • tr, echo, printf
+                • false, true, test, expr
+                • tee, date, timeout
+                • factor, seq
+    • multiple ways to execute shell scripts
+        • sh /path/to/script
+        • ./path/to/script

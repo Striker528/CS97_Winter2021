@@ -1,0 +1,273 @@
+Intro:
+
+See tic-tac-toe Notes for just creating a tic-tac-toe game
+
+I then used the command
+	npx create-react-app chorus-lapilli
+
+I then deleted the src/ folder by;
+	cd chorus-lapilli
+	rm -f *
+
+Then:
+	> index.css
+	> index.js
+
+I then opened the chorus-lapilli file using Visual Studio and copied 
+	the existing code from tic-tac-toe
+- (the code from right before the time travel)
+
+-------------------------------------------------------------------------------
+So I first started with planning, I saw the 5 steps I had to do were:
+
+/* Outline
+ 1: Set up a constructor variable for X's and O's
+ 2. Set up a limit for 3 X's and 3 O's
+ 3. Set up a way for a player to either click on an X or O, and delete that 
+	X or O and have only 2 place holders (X or O)
+ 4. Then have the player only place an X or an O in a empty box around an 
+	existing X or O
+ 5. If there is 3 pieces on the board & one of the peices is in the 
+	center square: 
+    In next turn: must win or delete that placeholder in the center*/
+
+So, I started with 1:
+
+-------------------------------------------------------------------------------
+Step 1:
+This was easy as in the constructor for the game, I just added:
+	X: 0, 
+        O: 0,
+-------------------------------------------------------------------------------
+Step 2:
+To set a limit for the X's and O's, 
+I created an if statement 
+if (this.state.X === 3 && this.state.O === 3) {}
+that would force the program to go to this state, and force the player
+	to delete an X or an O (which I will be calling pieces)	
+-------------------------------------------------------------------------------
+Step 3:
+I set it so that that only X's can delete X and only O's can delete O's 
+with:
+if ((this.state.xIsNext && (squares[i] === "X")) || (!this.state.xIsNext 
+	&& (squares[i] === "O"))) {
+
+and then, I set the squares[i] or where the player clicked, to be null
+
+Then I made a copy of the squares, like the base game 
+	with the 
+this.setState({
+                    history: history.concat([
+                        {
+                            squares: squares
+                        }
+                    ])
+
+then, for when the player normally adds a piece, I added one to the 
+constructor X and O so the game would take count of the number of pieces
+
+then, for the deleting part, I just did the inverse and deleted them by:
+if (this.state.xIsNext) {
+                    this.setState({ X: this.state.X - 1 });
+                    //if I handleClick, it would just delete the X, then 
+			add it there again, 
+                    //so to fix this, I just had to not change the xIsNext vaue
+                    //alert("X has gone down by 1");
+                    //this.handleClick(i)
+                }
+                //Same as ^, but O
+                else {
+                    this.setState({ O: this.state.O - 1 });
+                    //alert("O has gone down by 1");
+                }
+
+I also had to make sure to seperate the calculateWinner and 
+	squares[i] as having those 2 in the beginning messes up the 
+	deleting then adding part
+
+So with this done, now I have to add the second part of the first
+	bullet point
+-------------------------------------------------------------------------------
+Step 4:
+To do this, I first had to create a function that would return an array
+that would be a list of the possible locations that a deleted piece 
+could go:
+possibleLoc(i) {
+        if (i === 0) {
+            return [1, 3, 4]
+        }
+        else if (i === 1) {
+            return [0, 3, 4, 5, 2]
+        }
+        else if (i === 2) {
+            return [1, 4, 5]
+        }
+        else if (i === 3) {
+            return [0, 1, 4, 7, 6]
+        }
+        else if (i === 4) {
+            return [0, 1, 2, 3, 5, 6, 7, 8]
+        }
+        else if (i === 5) {
+            return [2, 1, 4, 7, 8]
+        }
+        else if (i === 6) {
+            return [3, 4, 7]
+        }
+        else if (i === 7) {
+            return [6, 3, 4, 5, 8]
+        }
+        else {
+            return [5, 4, 7]
+        }
+    }
+
+And to keep track of where the player deleted a piece, I had to add:
+this.setState({ deletedPlace: i });
+right next to the place where the player nulled the space
+
+Then, everytime a player adds a piece I used the deletedPlace to see where 
+the player can add the next piece 
+
+//for moving the deleted X or O to an empty place that is adjacent vertically,
+	 horizontally, or diagonally
+            if (this.state.deletedPlace !== null) {
+                //alert("At deleted Place Check");
+                var whereYouCanPlace = 
+			this.possibleLoc(this.state.deletedPlace);
+                //alert(whereYouCanPlace);
+
+                //need to learn to spell, I misspelled includes as inclues
+			 and was stuck for an hour
+                var n = whereYouCanPlace.includes(i);
+
+                if (n === false) {
+                    alert("You must move that " + 
+			(this.state.xIsNext ? "X" : "O") +
+                        " to a place that is adjacent vertically, 
+			horizontally, or diagonally");
+                    return
+                }
+            }
+
+I found a function .includes(i) that checks an array to see if it has
+	an item i, and it return true if it does, and false if it doesn't
+- and that is it for step 4
+-------------------------------------------------------------------------------
+Step 5:
+To do this, I had to keep track of when the player places a piece on the center
+and to keep track if they delete it or not 
+
+//step 5
+                //if the player deletes the center piece, 
+		it nulls the constructor arguments
+                if (i === 4) {
+
+                    if (this.state.xIsNext) {
+                        this.setState({ xIsInCenter: null });
+                    }
+                    else {
+                        this.setState({ oIsInCenter: null });
+                    }
+                }
+- I added this to right after the player deletes a space, to tell 
+the constructor that the player has indeed moved from the center
+
+//Step 5
+            if ((this.state.xIsNext && this.state.xIsInCenter) || 
+		(!this.state.xIsNext && this.state.oIsInCenter)) {
+
+
+                //for the case when the player just needs to 
+		//put a piece in the center
+                if (calculateWinner(squares)) {
+                    return;
+                }
+
+                alert("Player: " + (this.state.xIsNext ? "X" : "O") +
+                    " has not moved their piece thus violated the 
+			center rule and/or lost!"); 
+
+                if (this.state.xIsNext) {
+                    this.setState({ oHasWon: true });
+                }
+                //Same as ^, but O
+                else {
+                    this.setState({ xHasWon: true });
+                }
+
+                return;
+            }
+- I added this to the end of the handleClick to see if the player has not moved
+which violates the rules, and thus looses
+
+            //Step 5
+            //marking that the player has clicked on the Center tile 
+            if ((this.state.xIsNext && (squares[4] === "X")) || 
+		(!this.state.xIsNext && (squares[4] === "O"))) {
+
+                //for the case when the player just needs to 
+		//put a piece in the center
+                if (calculateWinner(squares)) {
+                    return;
+                }
+                alert("Player: " + (this.state.xIsNext ? "X" : "O") +
+                    " you must either win or vacate the center 
+			square in your next move.");
+
+                if (this.state.xIsNext) {
+                    this.setState({ xIsInCenter: true });
+                }
+                //Same as ^, but O
+                else {
+                    this.setState({ oIsInCenter: true });
+                }
+            }
+- I added this also at the end of handle click, and this servers to warn the 
+player and constructor that the player must move or win in the next round,
+and if they don't the other player wins.
+
+-I added the calcualteWinner(squares)) at the top becuase I get getting
+early alerts, which I fixed with just returning if the person won and not
+unecessarily alerting them. 
+
+-And that is pretty much all I did for 5.
+I also added specific messages for the winning from the center to render:
+
+if ((this.state.X === 3 && this.state.O === 3)) {
+            if (winner) {
+                status = "Winner: " + winner;
+            }
+            else if (this.state.xHasWon) {
+                status = "Winner: Player X";
+            }
+            else if (this.state.oHasWon) {
+                status = "Winner: Player O";
+            }
+
+Which is just to add a bit of clean up instead of just an alert. 
+-------------------------------------------------------------------------------
+
+npm pack [[<@scope>/]<pkg>...] [--dry-run]
+
+npm pack * chorus-lapilli --dry-run
+
+npm pack
+
+npm pack --dry-run
+: shows all all the files as if they were packed
+: and it showed the version number and such
+
+Just the first step of deleting the value was hard as I still needed to 
+learn a lot about JavaScript and Node, and to see how the code flowed as
+I made many assumptions and had thoughts about how the code should work, 
+but doesn't. 
+Learning about the alert tool really helped, and after I finished deleting,
+everything else was pretty much a breeze. 
+
+I have some more notes on the actual code which explains things in more detail
+as you can actually see how the code is interwined, and I did not want to copy
+it over and keep reformating it due to the 80 column restriction. 
+
+Thank you for your time, and I hope the rest of your day goes well.
+Austyn Adams

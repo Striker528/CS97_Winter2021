@@ -1,0 +1,37 @@
+Daniel's Workflow Tips
+	- OS part
+		- Mac you're mostly setup for rest of video (Mac is Unix already)
+		- Windows then you probably want to install WSL (Windows Subsystem for Linux)
+			- https://docs.microsoft.com/en-us/windows/wsl/install-win10
+			- Once you are using WSL, make sure to follow Linux instructions for online docs
+		- Might want to get a better terminal if you are on Windows
+			https://docs.microsoft.com/en-us/windows/terminal/get-started
+	- SSH (logging into things)
+		- SSH Keys
+			Setup - https://www.digitalocean.com/community/tutorials/how-to-set-up-ssh-keys-on-ubuntu-20-04
+			
+			ssh -i ~/.ssh/SEASnet classaad@lnxsrv10.seas.ucla.edu
+			
+			Config File - https://linuxize.com/post/using-the-ssh-config-file/
+			Note:	If you setup your SSH Key with a password, will have to use it each time
+				but you can setup SSH Key without password
+	- Git
+		- Setup SSH Keys for password-less push/pull to Github
+			Same setup as above, just need to add SSH Key to Github account
+		- Use git to sync files from computer to server
+			- Same repo on computer/server
+	- Text Editors
+		- Some prefer IDEs (Visual Studio/xCode/jetBrains)
+		- Some prefer plainer (Sublime/Atom/Notepad++)
+		- VSCode has useful features
+			- Can connect over SSH for various features
+			- Remote-SSH Extension
+			- Remote-WSL Extension (if using WSL)
+			- Good to setup SSH Keys + Config so you can connect to predefined servers without password
+			
+			For some reason, VS code tooke the .ssh file from C:/Users/Owner/.ssh/config instead of 
+			Ubuntu/home/striker/.ssh/config
+			So for now, I have to copy all of the files from ubuntu over to the C:/users/owner
+
+
+		

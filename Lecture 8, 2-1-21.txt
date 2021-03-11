@@ -1,0 +1,862 @@
+Lecture 8, 2-1-21
+
+Create files FL instead of CRLF?
+	- Microsoft convention: each line end with CR-LF (2 bytes)
+	- Old Apple conventaion: just CR (saves space).
+	- Everybody else: just LF
+	
+	tr does transliteration, and deletion
+	
+	tr -d a (Delete all a's from input)
+	tr -d '\r' <infile > outfile (Delete all CRS from infile and put the output into the outfile)
+
+We've already talked about:
+	networking (TCHP/IP/HTTP etc.)
+	documents (SGML/HTML/CSS etc.)
+
+Hook it all together:
+
+	1. Layers in networking and in software construction. 
+		networking: link / IP / TCP / HTTP / HTTPS
+			(this is changing: HTTP/3 will dump TCP) 
+		software constructoin:  apps / 
+					Javascript libraries (Node etc. ) / 
+					Javascript code / 
+					browser prograsm (Chrome, Firefox, etc.) / 
+					libraries (C/C++ libraries, rendering, etc.) / 
+					system calls (details about this later) / 
+					C or C++ code translated to machine code / 
+					machine code
+
+		and there's more:
+	
+			more atop this
+			client-server apps
+				(divided our apps into 2 pieces on different network nodes)
+	
+	2. Glue the layers together 
+		via JS code (method calls, packaging, ...)
+
+Library vs. framework
+	Library: collection of code (C: function + initalized vars)
+		(C++: classes (including methods, statics)
+	Framework: a library that is better organized to give you a particular way of programming
+The "Collections framework" of Java gives you an organized set of classes that deal with all sorts of collections;
+	lists
+	hash tables
+	arrays
+	B-trees
+	et.c
+in a unifed way. 
+There are many frameworks for dealing with GUI (graphical user interfaces), or ML (Machine learning) algorithms, etc. 
+
+JavaScript
+	yet another programming language
+	the name "JavaScript" is sort of a play on Java
+		Java - cleaned-up C++ (garbage collection etc.) 
+			Intended for large applications that are built carefully 
+			problem: overkill for small stuff
+				initally: web apps were teh "small stuff"
+				idea: let's get rid of Java's bureaucracy, because reliability is not that big a deal on the web
+
+		JavaScript - nice, "scripting" langauge wit ha syntax like Java but quite a different attitude:
+			flexiblity over safety
+
+	at its core, a very dynamic (more so even than Python) 
+		classes = bureaucracy = bad
+	can easily be hooked into web pages' HTML
+
+	3 HTML elements, 2 are implementd via JavaScript: 
+	(data containing a program).
+
+		<p> Here is a paragraph. </p>
+
+		<script src= "javahlep.js"></script>
+
+		<script> alert ("Hello world!"); <script>
+	
+	JavaScript can also *generage* HTML/DOM (Document Object Model).
+		(program generting data) 
+
+http resource:
+	- thing your retrieve by following a URL.
+
+	You can run JavaScript programs without browsers:
+		tuned for browsers, but can be run without a GUI at all. 
+
+	Javascript is already a half-fledged language:
+		it has a library, basic capabilites are rather limited
+		(reason: it must fit into tiny browsers) 
+		needs more libraries to build real apps (in browsers or elsewhere) 	
+		over time, these libraries have gotten better, but it's still a pain in JS to fiddle with or generate DOM/HTML
+			a method call for each HTML entity et.c 
+			a lot of parentheses in the code
+			you just want t osee the HTML, not just seres a method calls to generate it. 
+
+	JSX - an extension to JavaScript, useful for generating DOM etc. 
+	
+		You can use JSX inside JavaScript to build DOM easily. 
+
+			<script> 
+				...
+				const language = "en"; <-- JavaScript
+				const class = "CS 97";
+				const n = 4; 
+
+				const header = <-- JavaScript 
+				<h1 lang = {   <-- JSX
+					language <--JavaScript
+						}> {class} assignment {n}</h1>     <-- JSX
+				; <-- JavaScript
+				...
+			</script> 
+
+	Some limitation on JSX.
+		These JSX extension are implemented as JavaScript calls. 
+			You can think of JSX as being translated into JavaScript. 
+		So, a JSX element can appear anywhere a function call can.
+		JSX produces a React element which you can use when you want to modfy the DOM for your web page. 
+
+	...
+	ReactDom.render(header, document.getElementById("root"));
+		- taking the data strucutre represent my web page, giving it to React, and tells it to show the document
+
+
+1. Browser rendering pipeline: 
+	
+	basic idea:
+		- browser downloads web page from the server
+		- examines the DOM implied by the web page
+		- puts pixels on screen 
+	user is impatient, doesn't want to wait (more than 10 ms, say) for all this to finish.
+		If the web page is large, it may take more than 10ms to transmit the data
+			(throughput issue)
+		Even if it's small, there still may be more than 10 ms of latency between the original user request
+			and displaying all the pixels
+
+		If the user sees:
+		... <script scr = "javascript.js"> ...
+		means we need to retrieve another resource
+	so: broswer starts rendering (putting pixels on screen) before it knows what all the pixels are 
+	some optimization the browser can do:
+		- if it looks an element won't appear on the screen, don't examine it. 
+		- if JS code is inside a low-priority element, don't execute it now (maybe it won't even be needed). 
+		- figure out the top-level layout, but start rendering components later, and then if guess is wrong, then re-render 
+	this means, your JS code can execute *while* a page is rendering 
+
+2. JSON - JavaScript Object Notation
+
+	simply a notation for JavaScript objects (JavaScript subset)
+		objects are tree strucuted 
+		(professor's code)
+
+	text format for communicating an object from one JS program to another 
+	There's something odd going on here, because this duplicates the function of HTML
+		- a notation for communicating trees across a wire. 
+	This XML can do the same thing: 
+		(professors code) 
+
+	Javascript better than HTML (top code better than bottom code), less memory and runs faster, and looks better
+
+
+Node.js
+	https://node.js
+
+	JavaScript library/framework/runtime for *asynchronous* events 
+		way of building a "Read-Eval-Print-Loop" style application 
+	*asynchronous* means events can occur whil your're evaluating. 
+		This can happen in teh shell, but it's awkard and we don't like to talk about it.
+		In Node, it happens all the time, and it's not supposed to be that awkard. 
+
+	A disciplined way to set up a bunch of callbacks and event handlers.
+	The discipline is pretty simple: it's an *event loop*. 
+
+	while (true) {
+		get next even to do from que of incoming events;
+		do it; 
+	}
+
+	what's left out of this simple looop:
+		how are events added to the queue? 
+		1. Outside world (user presses left mouse button on desktop) 
+			these are automatically added to the queue. 
+		2. "do it" operation can insert evetns into the queue. 
+
+	This is just the opposite of a "standard" way of writing programs that must deal with lots of inputs: multithreaded apps. 
+	In a multithreaded app:
+		one thread listening to the keyboard
+		one thread listening to the mouse 
+		one thread listening to the network
+		...
+		each thread waits for an event, acts on it.
+		threads cooperate to avoid stepping on each other's toes. 
+		this requries some sort of locking to prevent races 
+
+	Instead, we have just one thread, in charge of everything:
+		+ race conditions less likely, because 2 event handlers cannot run at hte same time, so no locks are needed
+		- no parallelism
+		- each event handler must finish quickly, otherwise events will pile up. 
+			What this means is, event cannot:
+				(1) want for anything (e.g., a handler cannot query Google for something) 
+				(2) do a lot of computation (e.g, do Machine Learning training)
+			Therefore you msut split up long-running computations. 
+
+	Still: 
+		- a good match for client code
+		- a good match for much server code 
+
+	This gives you a differnt way to scale your apps. 
+		- multithreaded code scales across many cores of a CPU
+			(or even across CPUS in a shared-memory system)
+		- event-loop code scales by letting you set up lots of servers in differnt processese in the same machine 
+			and by setting up lots of "tabs" in a broswer
+			(Firefox, etc., run seperate processes for each tab of each browser window, each typically running a JS event loop.
+			This helps security because processes cannot easily affect each other.)
+
+	This event-loop idea is not just a Node thing
+		Python has it wit hasyncio, Twisted
+		Ruby has the Event Machine
+		...
+
+You can build anything with Node.js
+So, the Node folks built a web server (writing it in JavaScript)
+Because  the server-side JavaScript runs on the server, it's insulated from ancient browsers. 
+Lots of server-side libraries available. 
+
+Some mechanics: write some javascript code and put it in a file called app.js 
+
+
+Bif software ecosystem built atop this. 
+You need to use this ecosystem to use Node and React effectively. 
+It's configured via *packages* - a *package* is a collection of code maintained by one person or a well-managed group, 
+	that will help you build your application
+These packages are related to each other. 
+	A package A can *depend* on package B, if it requires B in order to run. 
+	If your app requries A, it may not even know about B, but B's still necessary
+
+Node Package manage (npm) command keeps track of this for my application:
+	* what package my app needs direclty (because I tell it)
+	* It knows the indirect requirements (becasue thos packages have metainformation that tell it).
+It records this stuff in a file package.json (in JSON form) (in javascript world, everything is done in JSON) 
+
+*********************************************************************************************************************************************************
+
+UCLA CS 97 lecture 2021-02-01
+
+pardon the noise
+
+admin stuff
+
+Q. How to create files LF instead of CRLF?
+A. Microsoft convention: each ends with CR-LF (two bytes)
+   Old Apple convention: just CR (saves space).
+   Everybody else: just LF.
+
+   tr does transliteration, and deletion
+
+   tr -d a  Delete all a’s from input
+   tr -d '\r' <infile >outfile     Delete all CRs
+
+Q. Will there be an extension given for assignment 3?
+A. I’ll talk to the TAs.
+
+Q. Format of midterm? how to prepare?
+A. Sample midterms published this week, discussion session on Friday.
+   Open book, open notes, open Internet (no help from any person).
+   Questions can’t do “by-the-book” answers since you’ll just look them up.
+   I try to hook together multiple concepts in the same question
+      not multiple-choice choice or true false most likely
+      essay type is more common
+      you write or analyze some code, perhaps
+   24 hour window to finish a 2-hour exam (for different time zones).
+   suggestion is sooner rather than later, for faster response.
+   no lecture on the midterm day; instead a brief zoom session
+      at lecture start, covering any last-minute midterm stuff
+      (fix typos, etc.)
+      I’ll make the midterm a CCLE “quiz”, so you can type answers there.
+
+Q. How many questions are there in general?
+A. Don’t know; maybe a dozen?
+
+Q. To verify, the midterm will open Feb 8th at 12p PST?
+A. Yes, that’s when zoom session starts.
+
+Q. What material will the midterm cover?
+A. Everything in lectures and discussion, all assignments given so far
+(including answers).
+
+Q. My react application should be built locally correct? Like not on
+the lnxsrv06 on seas?
+A. I suggest running it locally, yes.
+
+=====
+
+we’ve already talked about:
+  networking (TCP/IP/HTTP etc.)
+  documents (SGML/HTML/CSS etc.)
+
+I assume you’re doing React/Node/JS/JSX already.
+
+Hook this all together.
+
+  1. Layers (in networking and in software construction)
+       networking: link / IP / TCP / HTTP / HTTPS
+                          (though this is changing: HTTP/3 will dump TCP)
+       software construction:
+
+           apps
+           JavaScript libraries (Node etc.)
+           JavaScript code
+           browser programs (Chrome, Firefox, etc.)
+           libraries (C/C++ libraries, rendering, etc.)
+              system calls (details about this later)
+       C/C++ code translated to machine code
+           machine code
+
+      and there’s more:
+
+           more atop this
+           client-server apps
+         (divided our apps into two pieces on different network nodes)
+
+  2. Glue the layers together
+        via JS code (method calls, packaging, ...)
+
+Q. what is the difference between library and framework
+A. A library is a collection of code (C: functions+initalized vars)
+      (C++: classes (including methods, statics))
+A “framework” - a library that’s organized to give you a particular
+way of programming.
+The “Collections framework” of Java gives you an organized set of
+classes that deal with all sorts of collections: lists, hash tables,
+arrays, B-trees, etc. in a unified way. There are many frameworks
+for dealing GUIs, or ML algorithms, etc.
+
+Q. Is React a library or framework?
+A. A framework.
+
+JavaScript
+  yet another programming language
+    the name “JavaScript” is sort of a play on Java
+       Java - cleaned-up C++ (garbage collection etc.)
+              intended for large apps where static checking is a big deal
+              problem: overkill for small stuff
+             initially: web apps were the “small stuff”
+         idea: let’s get rid of Java’s bureaucracy,
+           because reliability is not that big a deal on the web
+
+       JavaScript - nice, “scripting” language with a syntax like Java
+                    but quite a different attitude:
+               flexibility over safety
+
+   at its core, very dynamic (more so even than Python)
+   can easily be hooked into web pages’ HTML
+
+   Three HTML elements, two are implemented via JavaScript
+   (data containing a program).
+
+     <p> Here is a paragraph. </p>
+
+     <script src="javahelp.js"></script>
+
+     <script>alert("Hello world!");</script>
+
+   JavaScript can also *generate* HTML/DOM (Document Object Model).
+     (program generating data).
+
+Q. you called the .js file a http resource. What is a http resource?
+A. It’s thing you retrieve by following a URL.
+      https://www.cs.ucla.edu/classes/winter21/cs97-1/index.html
+
+  You can run JavaScript programs without browsers:
+    tuned for browsers, but can be run without a GUI at all.
+
+  JavaScript is already a half-fledged language:
+    it has a library, basic capabilities are rather limited
+      (reason: it must fit into tiny browsers)
+    needs more libraries to build real apps (in browsers or elsewhere)
+    over time, these libraries have gotten better,
+      but it’s still a pain in JS to fiddle with or generate DOM/HTML
+        a method call for each HTML entity etc.
+    lot of parentheses in the code
+    you just want to see the HTML,
+    not series of method calls needed to generate it.
+
+  JSX - an extension to JavaScript, useful for generating DOM etc.
+
+     You can use JSX inside JavaScript to build DOM easily.
+
+       <script>  <-- HTML
+         ...
+         const header = <-- JavaScript
+        <h1 lang="en">CS 97 assignment 4</h1>   <-- JSX
+        ; <-- JavScript
+     ...
+       </script>
+
+       <script>  <-- HTML
+         ...
+     const language = "en";   <--JavaScript
+     const class = "CS 97";
+     const n = 4;
+
+         const header = <-- JavaScript
+        <h1 lang={   <-- JSX
+              language    <--JavaScript
+           }>{class} assignment {n}</h1>   <-- JSX
+        ; <-- JavScript
+     ...
+       </script>
+
+
+    Some limitations on JSX.
+       These JSX extensions are implemented as JavaScript calls
+         You can think of JSX as being translated into JavaScript.
+       So, a JSX element can appear anywhere a function call can.
+       JSX produces a React element which you can use when want to
+          modify the DOM for your web page.
+
+        ...
+    ReactDOM.render(header, document.getElementById("root"));
+
+Q. I thought in React the ; were optional?
+A. Yes they often are.
+
+Q. Will we need to learn about React classes despite Hooks deprecating
+classes?
+A. You don’t need to learn about any specific classes; the goal is to
+get stuff working in React.
+
+early break to wait out sound next door
+Resume at 12:54.
+
+Q during break. also regarding the extension for homework 3, there was a post on piazza about it and the ta’s said that it’s entirely up to you
+A. I will talk about it with TAs tomorrow. I do now recall talking
+with them about a hw3 extension but did not write down what the
+decision was.
+
+
+1. Browser rendering pipeline
+
+  basic idea:
+    - browser downloads web page from the server
+    - examines the DOM implied by the web page
+    - puts pixels on screen
+  user is impatient, doesn’t want to wait (more than 10 ms, say)
+     for all this to finish
+    If the web page is large, it may take more than 10 ms to transmit data
+       (throughput issue).
+    Even if it’s small, there still may be more than 10 ms of latency
+      between the original user request and displaying all the pixels.
+
+       .... <script src="javascript.js">....
+        means the browser needs to retrieve another resource
+  so: browser starts rendering (putting pixels on screen) before
+    it knows what all the pixels are
+  some optimizations the browser can do:
+    - if it looks an element won’t appear on the scren, don’t examine it.
+    - if JS code is inside a low-priority element, don’t execute it now
+        (maybe it won’t even be needed).
+      Q. How does the browser determine what’s low priority?
+      A. “Won’t appear on screen” is low priority.
+         CSS can specify priority
+         “close to user cursor” is high priority
+    - guess the top-level layout, but start renderiung components
+        later, and then if guess is wrong, then re-render
+ this means, you JS code can execute *while* a page is rendering
+
+2. JSON - JavaScript Object Notation
+  simply a notation for JavaScript objects (JavaScript subset)
+    objects are tree structured
+
+     {"menu": {
+      "id": "file",
+      "value": "File",
+      "popup": {
+        "menuitem": [
+          {"value": "New", "onclick": "CreateNewDoc()"},
+          {"value": "Open", "onclick": "OpenDoc()"},
+          {"value": "Close", "onclick": "CloseDoc()"}
+        ]
+      }
+    }
+     }
+
+  text format for communicating an object from one JS program to another
+  There’s something odd going on here, because this duplicates the
+  function of HTML - a notation for communicating trees across a wire.
+  This XML can do the same thing:
+
+     <menu id="file" value="File">
+      <popup>
+        <menuitem value="New" onclick="CreateNewDoc()" />
+        <menuitem value="Open" onclick="OpenDoc()" />
+        <menuitem value="Close" onclick="CloseDoc()" />
+      </popup>
+    </menu>
+
+  Q. What is the difference between XML and HTML?
+  A. HTML came first, grew like Topsy, got quite complicated.
+       Attempt to modularize it into:
+         XML - core, mostly just entities, attributes <> syntax
+     HTML - well defined set of entities and attributes for the web
+
+  Q. So XML is a subset of HTML?
+  A. Sort of. It’s a somewhat-strict syntax for HTML core,
+        with no HTML semantics.
+
+  Q. What do you mean by HTML semantics?
+  A. HTML has elements like <head> and <body> that make sense only
+      an HTML context - they specify the metadata and top element
+      of web page.  So they’re not in XML; XML says that <head> ... </head>
+      must match, but it doesn’t say what a "head" element is for.
+
+
+Node.js
+
+   https://node.js
+
+   JavaScript library/framework/runtime for *asynchronous* events
+      way of build a “Read-Eval-Print-Loop” style application
+   *asynchronous* means events can occur while you’re evaluating.
+     This can happen in the shell, but it’s awkward and we don’t like
+     to talk about it; in Node it happens all the time, and it’s
+     not supposed to be that awkward.
+
+   A disciplined way to set up a bunch of callbacks and event handlers.
+   The discipline is pretty simple: it’s an *event loop*.
+
+     while (true)
+       {
+         get next event to do from queue of incoming events;
+     do it;
+       }
+
+     what’s left out of this simple loop:
+       how are events added to the queue?
+         1. outside world (user presses left mouse button on desktop)
+          these are automatically added to the queue.
+     2. “do it” operation can insert events into the queue.
+
+   This is just the opposite of a “standard” way of writing programs
+   that must deal with lots of inputs: multithreaded apps.
+   In a multithreaded app:
+     one thread listening to the keyboard
+     another thread listening to the mouse
+     another thread listening to the network
+     ...
+     each thread waits for an event, acts on it.
+     threads cooperate to avoid stepping on each other’s toes.
+     this requires some sort of locking to prevent races
+
+
+   Instead, we have just one thread, in charge of everything:
+     + race conditions less likely, because two event handlers
+          cannot run at the same time, so no locks are needed
+     - no parallelism
+     - each event handler must finish quickly, otherwise
+          events will pile up.  What this means is, events
+      cannot (1) wait for anything (e.g., a handler
+      cannot query Google for something), or (2) do a
+      lot of computation (e.g., do Machine Learning training)
+    Therefore you must split up long-running computations.
+
+   Still:
+      - a good match for client code
+      - a good match for much server code
+
+   This gives you a different way to scale your apps.
+     - multithreaded code scales across many cores of a CPU
+         (or even across CPUs in a shared-memory system)
+     - event-loop code scales by letting you set up lots of
+        servers in different processes in the same machine
+        and by setting up lots of “tabs” in a browser.
+      (Firefox, etc., run separate processes for each
+       tab of each browser window, each typically
+       running a JS event loop. This helps security
+       because processes cannot easily affect each other.)
+
+  This event-loop idea is not just a Node thing
+     Python has it with asyncio, Twisted
+     Ruby has the Event Machine
+     ...
+
+Q. Is there a difference in how browsers deal with different tabs vs[
+“windows” or is that purely for the user
+A. They’re about the same as far as the event loop goes.
+
+Q. So if we didn't have Node.js how would we use JS to run an app?
+A. Each process has its own JS interpreter, so your Nodeless JS
+would run on that interpreter.  If your JS went into an infinite loop,
+your browser would have to deal with it.
+
+Q. so the all the tabs only use one core within the cpu since they run
+on a single thread?
+A. No, each tab has its own process, and each process could have a
+core to itself (if you have 100s of tabs and only 4 cores, they
+they’ll timeshare).
+
+
+You can build anything with Node.js.
+So, the Node folks built a web server (writing it in JavaScript)
+Because the server-side JavaScript runs on the server, it’s
+   insulated from ancient browsers.
+Lots of server-side libraries available.
+
+Some mechanics: write some javascript code and put it into a file
+app.js
+
+    const http = require('http')
+    const ip = '127.0.0.1'
+    const port = 3000
+
+    const server = http.createServer((request, response) => {
+        response.statusCode = 200
+        response.setHeader = ('Content-Type', 'text/plain')
+        response.end('This is just a toy server.\n')
+    })
+
+    server.listen(
+        port, ip,
+        () => {
+        console.log(`Server running at http://${ip}:${port}/`)
+        })
+
+Big software ecosystem built atop this.
+You need to use this ecosystem to use Node and React effectively.
+It’s configured via *packages* - a *package* is a collection of
+  code maintained by one person or well-managed group
+  that will help you build your application.
+These packages are related to each other.
+  A package A can *depend* on a package B, if it requires B
+    in order to run.
+  If your app requires A, it may not even know about B, but B’s still necessary.
+
+Node Package Manager (npm) command keeps track of this for application:
+  * what packages your app needs directly (because you tell it)
+  * it knows the indirect requirements (because those packages
+       have metainformationm that tell it).
+It records this stuff in a file package.json (in JSON form)
+
+
+Q. is node.js a backend framework?
+A. Yes and no. It can be used either backend or frontend.
+It’s really an event-handling framework.
+
+Q. Has anyone ever built a web app just in node?
+A. I don’t know; but one could argue that React is that.
+In theory you can do it without React.
+
+----- first shell transcript -----
+
+506-day $ pwd
+/home/eggert/class/cs97/2021-winter/2021-02-01
+507-day $ node app.js
+Server running at http://127.0.0.1:3000/
+  C-c C-c
+508-day $ pwd
+/home/eggert/class/cs97/2021-winter/2021-02-01
+509-day $ cd d
+bash: cd: d: No such file or directory
+510-day $ mkdir d
+511-day $ cd d
+512-day $ npm init
+This utility will walk you through creating a package.json file.
+It only covers the most common items, and tries to guess sensible defaults.
+
+See `npm help init` for definitive documentation on these fields
+and exactly what they do.
+
+Use `npm install <pkg>` afterwards to install a package and
+save it as a dependency in the package.json file.
+
+Press ^C at any time to quit.
+package name: (d) hello
+hello
+version: (1.0.0)
+
+description:
+
+entry point: (index.js)
+
+test command:
+
+git repository:
+
+keywords:
+
+author:
+
+license: (ISC)
+
+About to write to /home/eggert/class/cs97/2021-winter/2021-02-01/d/package.json:
+
+{
+  "name": "hello",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
+
+
+Is this OK? (yes) y
+y
+513-day $ npm install express
+npm notice created a lockfile as package-lock.json. You should commit this file.
+npm WARN hello@1.0.0 No description
+npm WARN hello@1.0.0 No repository field.
+
++ express@4.17.1
+added 50 packages from 37 contributors and audited 50 packages in 3.274s
+found 0 vulnerabilities
+
+
+
+   ╭─────────────────────────────────────────────────────────────────╮
+   │                                                                 │
+   │      New patch version of npm available! 6.14.8 → 6.14.11       │
+   │   Changelog: https://github.com/npm/cli/releases/tag/v6.14.11   │
+   │                Run npm install -g npm to update!                │
+   │                                                                 │
+   ╰─────────────────────────────────────────────────────────────────╯
+
+514-day $ npm i
+npm WARN hello@1.0.0 No description
+npm WARN hello@1.0.0 No repository field.
+
+audited 50 packages in 0.612s
+found 0 vulnerabilities
+
+515-day $ npm install --save express
+npm WARN hello@1.0.0 No description
+npm WARN hello@1.0.0 No repository field.
+
++ express@4.17.1
+updated 1 package and audited 50 packages in 2.166s
+found 0 vulnerabilities
+
+516-day $ pwd
+/home/eggert/class/cs97/2021-winter/2021-02-01/d
+517-day $ cd ..
+518-day $ ls -ltr
+total 8
+-rw-rw-r-- 1 eggert eggert  385 Feb  1 11:40 app.js
+drwxrwxr-x 3 eggert eggert 4096 Feb  1 11:43 d
+519-day $ rm -fr d
+520-day $ pwd
+/home/eggert/class/cs97/2021-winter/2021-02-01
+521-day $ ls -al
+total 12
+drwxrwxr-x  2 eggert eggert 4096 Feb  1 11:44 .
+drwxrwxr-x 12 eggert eggert 4096 Feb  1 11:39 ..
+-rw-rw-r--  1 eggert eggert  385 Feb  1 11:40 app.js
+522-day $ echo hello
+hello
+523-day $ sleep 10
+echo hello
+524-day $ hello
+525-day $ pwd
+/home/eggert/class/cs97/2021-winter/2021-02-01
+526-day $ ls app.js
+app.js
+527-day $ node app.js
+Server running at http://127.0.0.1:3000/
+  C-c C-c
+528-day $
+
+
+
+----- second shell transcript -----
+
+501-day $ telnet 127.0.0.1 3000
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+GET / HTTP/1.1
+GET / HTTP/1.1
+
+
+HTTP/1.1 200 OK
+Date: Mon, 01 Feb 2021 21:43:57 GMT
+Connection: keep-alive
+Content-Length: 27
+
+This is just a toy server.
+Connection closed by foreign host.
+502-day $ pwd
+/home/eggert/class/cs97/2021-winter/2021-02-01
+503-day $ mkdir d
+504-day $ cd d
+505-day $ ls -l
+total 0
+506-day $ npm init
+This utility will walk you through creating a package.json file.
+It only covers the most common items, and tries to guess sensible defaults.
+
+See `npm help init` for definitive documentation on these fields
+and exactly what they do.
+
+Use `npm install <pkg>` afterwards to install a package and
+save it as a dependency in the package.json file.
+
+Press ^C at any time to quit.
+package name: (d)
+
+version: (1.0.0)
+
+description:
+
+entry point: (index.js)
+
+test command:
+
+git repository:
+
+keywords:
+
+author:
+
+license: (ISC)
+
+About to write to /home/eggert/class/cs97/2021-winter/2021-02-01/d/package.json:
+
+{
+  "name": "d",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
+
+
+Is this OK? (yes)
+
+507-day $ ls
+package.json
+508-day $ npm install express
+npm notice created a lockfile as package-lock.json. You should commit this file.
+npm WARN d@1.0.0 No description
+npm WARN d@1.0.0 No repository field.
+
++ express@4.17.1
+added 50 packages from 37 contributors and audited 50 packages in 2.723s
+found 0 vulnerabilities
+
+509-day $ npm install --save
+npm WARN d@1.0.0 No description
+npm WARN d@1.0.0 No repository field.
+
+audited 50 packages in 0.74s
+found 0 vulnerabilities
+
+510-day $
+		

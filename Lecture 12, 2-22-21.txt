@@ -1,0 +1,341 @@
+Lecture 12, 2-22-21
+
+Last time, GCC internals:
+	Big program, have CS 132 (compiler construction) about this sort of thing
+	
+Today, look at GCC from the outside
+	We're using *abstraction* - ignroing GCC internal details to make effective use of it
+	Occasionally those internal details will peep in to help motivate why GCC's features are the way they are. 
+	Similar things will be true for any compile
+
+What is GCC good for (to users)?
+	* It gets your program to run. (obvious) 
+	
+	* Security improvement. (Can tell GCC where to put its control panel w.r.t speed or security, speed vs secruity tradeoff)
+		One example:
+			gcc -fstack-protector
+				Puts a guard variable ("canary") on the stack. 
+				just above the return address.
+				This slows down the code a bit (create & check canary). 
+				A stack overflow via subscript error on a stack buffer will overwrite bytes in the stack past the buffer ,
+					these bytes will include the canary (the target is the return address, the canary is just a bystander that the 
+					attacker must stomp on, on its way).
+					So before returning, you look at the canary. 
+					(canary in the mineshaft)
+				
+				On Ubuntu, -fstack-protector is the default
+				On RHEL, -fno-stack-protector is the default
+				
+					What can go wrong with -fstack-protector?
+						One possiblity: attacker gueses canary value
+						Another possibility: your program has a bug that lets the attacker 
+							target the return address with accessing the canary. 
+						...
+				
+	* Performace improvement
+		
+		Tradeoff is between
+		1) runtime performace
+		2) development-time performace 
+		3) debuggability (higher-optimization levels are harder to debug)
+			Compiler can generate machine in a different order than the way your wrote it, for speed
+				You wrote:        Compiler genereates:
+				a = 0;               movl $1, b
+				b = 1;               movl $0, a
+				
+				or 
+				
+				                     moveq $1,b If b, a are adjeacent 32-bit words
+		
+		gcc (a bit of optimization, but not much)
+		gcc -O0 (optimize as little as possible; use when -Og doesn't work)
+		gcc -O (optimize)
+		gcc -O2 (optimize some more)
+		gcc -Og (optimize, but try to keep things debuggable)
+		
+		Turning on optimization: you might think it doesn't change what your program does, but that's not true. 
+		But optimization can change what your program does if your program is incorrect. 
+		
+		
+       incorrect.c program “ought” to overflow the integer index, and then access a[INT_MIN], which ought to crash your program,
+		but instead, it merely loops forever without crashing.
+       we compiled it with gcc -S to see this (this generates assembly language output, CS 33 will explain).
+
+       Optimization is supposed to cause your compiler to generate more efficient (different machine insns) code
+		that is still a correct implementation of your program, if your program is a working program.
+      We have here an application of the “as if” rule -
+          if you can’t tell the difference in behavior in a correct program (other than clock time), the optimization is allowed.
+      By “tell the difference” I mean, look at the program’s output.
+
+      Common scenario:
+        * Program doesn’t work, compiled with gcc -O2.
+    * Confusing/Hard to debug.
+    * Recompile with -Og or -O0 to make it easier to debug.
+    * Program starts “working”.
+
+Q. Would it make sense to compile using -O -O0 while debugging and
+then switching to -O3/4 when you want to deploy the program as an
+executable for example?
+A. Yes, that’s a common approach. Usually people stop at -O2, because
+higher levels are only sometimes useful and they make debugging hard
+everywhere.
+
+Q.  what does -O4 mean?
+A. Optimization level 4.
+
+    How to speed up your C etc. program past -O4, by telling
+    your compiler things that it couldn’t otherwise deduce.
+
+      __builtin_unreachable () function (in GCC, Clang, not standardized) 
+	  Defined by compiler.
+		This function has undefined behavior - if you actually execute it, the compiler could generate any code
+			it likes; so, don’t ever execute it.
+		Whereever you call it, the compiler can assume that this location cannot be reached during the execution of your program.
+
+      An example of __builtin_unreachable.
+
+         Renames a file, returns -1 on failure (setting errno to positive failure code),
+                              0 on success (setting errno to garbage)
+
+          int err = rename("a", "b") == 0 ? 0 : errno;
+          if (err == 0)
+        print ("OK!");
+
+    This will cause the compiler to generate code to test
+    whether errno == 0.  That’s inefficient.  It would
+    be better to tell the compiler that errno cannot
+    possibly be zero right after rename fails.
+
+        int positive(int x) { if (x <= 0) __builtin_unreachable (); return x; }
+
+          int err = rename("a", "b") == 0 ? 0 : positive(errno);
+          if (err == 0)
+        print ("OK!");
+
+     __builtin_unreachable (X) is a directive from the programmer to the compiler, telling the compiler that it can assume
+			that X is true, and it can use that assumption to generate better code.
+
+       This can improve performance, but -- what if the programmer
+       is wrong?
+
+    Two other ways to improve performance.
+
+    Big way: Link Time Optimization (LTO)
+		Basic idea: optimize the whole program, not just individual compilation units (source files).
+		By default, GCC can inline a function if it’s defined in the same source file (after preprocessing).
+		It cannot do this for a function defined in a different .c file.
+
+		LTO lets the GCC optimizer look at all the source code when linking, and do inlining etc. based on knowledge of the
+			whole program, not just the current module.
+        + better optimization
+		- slows down linking (often the slowest, hardest-to-parallelize part of building a program).
+          It’s disabled by default, but you can use -flto to enable it.
+
+    Medium-sized way: profiling
+		Basic idea: GCC generates code to count the number of times each line of code is executed.
+		You run the program on typical data (maybe several times).
+		You generate a profile of how often each line is executed, or (for every conditional branch), how often the branch is taken.
+		You can then feed this profile into GCC in a later compile, and tell it, “optimize based on this profile”.
+		Conditional branches are a big deal in modern computers; doing them wrong can greatly slow execution.
+		Doing them right can keep insns cached effienctly and help branch prediction.
+		Sometimes these profiles are hard to gather.
+		You need to tell GCC branch-prediction info anyway.
+
+	__attribute__ is a way you can tell GCC to improve performance.
+		Designed to help GCC improve performance without offending correctness.
+
+       void print_error (char *msg, ...) __attribute__ ((cold));
+
+       tells GCC that print_error is rarely called.
+
+           if (n < 0) {
+         print_error("Negative numbers not supported");
+         return;
+       }
+
+        GCC can assume N is rarely negative.
+    It can put the call to print_error in a “cold” section of
+    code, far away from the main code, so it’s not cached,
+    so insn cache is not polluted with cold code.
+
+     For other compilers, you can do this:
+        #ifndef __GNUC__
+    # define __attribute__(x) /* nothing */
+    #endif
+
+Q. Is the __name__ syntax significant for something?
+A. By convention, names starting with __ are reserved for the implementation
+   in Standard C/C++.
+
+   Another example:
+
+        char array[512] __attribute__ ((aligned (8)));
+
+   Guarantees that ((intptr_t) array) % 8 == 0.
+   This can signifcantly improve CPU performance at the hardware level,
+   at the cost of wasting bytes for alignment.
+
+There are dozens of attributes like this.
+
+
+Now, turn our attention to:
+
+Static checking for correctness
+  (normally done anyway, for type checking, name checking, ...)
+
+ Static assertions
+  Suppose you’re writing code involving the time_t type.
+
+   #include <time.h>
+   time_t x, y; ...
+
+   // Your code assumes that time_t is signed, and it won’t work otherwise.
+   // But the C standard says time_t might be unsigned.
+   // You want people who compile your code to be put on notice
+   // if the current platform has an unsigned time_t.
+
+   // One way:
+
+   int main (void) {
+     if (! ((time_t) -1 < 0)) {
+       print_error ("Your machine is weird");
+       exit(1);
+     } ...}
+
+
+   // A better way:
+    _Static_assert ((time_t) -1 < 0, "time_t is unsigned");
+       This causes the compiler to check that (time_t)-1<0, and
+       to report an error and exit otherwise.
+       + No runtime overhead at all!
+       + You find problems before the program runs.
+       - The expression must be a compile-time constant.
+
+    static_assert ((time_t) -1 < 0) in C++
+    _Static_assert ((time_t) -1 < 0) in C2X (next version of C standard)
+
+   Q. What is the need for time_t to be in parantheses
+   A. It’s a “cast” that explicitly converts -1 to time_t,
+        if time_t is signed, you get -1 < 0.
+    if time_t is unsigned int, you get UINT_MAX > 0
+
+
+ Warning options from GCC (there are dozens of options)
+
+   -Wall “Warn ALL” (is a misnomer) really generate all warnings
+       that are typically useful
+       Two problems with warnings:
+          false alarms - GCC warns, but the code is fine
+         i.e., false positives
+      false negatives - GCC doesn’t warn, but the code is bad
+       It’s theoretically impossible to eliminate both kinds of warnings
+         (this is a consequence of the Halting Problem)
+       GCC does the “best it can” but even this depends on program
+          and programmer
+      -Wall stands for a bunch of warning options combined:
+
+        -Wcomment  Warns about dubious constructions in comments.
+                   int x /* int y; /* y is greater than x */;
+        -Wparentheses  Warns about a “confusing” lack of parentheses.
+               int j = n << i + k;
+              means “n << (i + k)” but most C programmers
+              don’t know the precedence rules that well,
+              A better style might be
+               int j = n << (i + k);  // pacifies gcc -Wparentheses
+
+              if (a < b && b < c || i < n) ...
+              if ((a < b && b < c) || i < n) ... // pacifies gcc -Wparentheses
+
+        -Waddress warns about dubious address constructions, such as:
+
+           char *p = ...;
+       if (p == "abc")
+         ...
+
+        -Wstrict-aliasing    warns about pointers being “abused”
+                         to point at the “wrong” type.
+
+            long l = -1;   // 64-bit word
+        int *p = (int *) &l;   // pointer to a 32-bit word (GCC complains)
+        *p = 0;        // clears half of the 64-bit word
+                       // result is machine-dependent
+               // C standard says behavior is undefined.
+          The Linux kernel developers play this trick all the time
+          in their code, so they don’t use -Wstrict-aliasing.
+
+        -Wmaybe-uninitialized
+        Is there a path through your function that might use
+        a local variable V without first initializing V?
+        If so, generate a warning.
+
+             int f(int n) {
+                int v;
+        if (n < 0)
+          v = n + 1;
+                .... don’t change n or v here ...
+        return n < 0 ? v / 2 : ...;
+         }
+
+             GCC won’t warn about this, but only with -O2 or better.
+         With -O0 it might warn.
+
+      -Wextra stands for even more (more controversial) options
+
+        -Wtype-limits   warn about unnecessary comparisons due to
+                     type restrictions, e.g.:
+
+            time_t x;
+
+            if (x < 0)  // with -Wtype-limits,
+                    // generates a warning if time_t is unsigned
+          print("before epoch");
+
+         ...
+
+   Try compiling with ‘gcc -Wall -Wextra’.
+   Get a lot of false alarms.
+   Turn them off either by:
+     * disabling the warning ‘gcc -Wall -Wextra -Wno-type-limits’
+     * Modify your program somehow (this can be too much work).
+
+   -fanalyzer (new to GCC 10)
+      Like -Wmaybe-uninitialized etc., but it’s interprocedural
+         (looks at all the code in your .c file at once,
+      instead of looking at each function separately
+      to improve accuracy)
+      This really slows the compiler down, and so is experimental for now.
+
+Who decides which warnings to enable?
+     Developers of a program might disagree, and then what?
+     Take a vote?
+     corporate-wide style guide?
+
+You can give the compiler advice to help it improve the quality
+of its static checking.  Here are some examples.
+
+  You can tell GCC that a function is “pure”.
+     int hash (char const *str) __attribute__ ((pure));
+
+    A pure function has no side effects and its return value
+    depends only only its arguments and on the contents of
+    storage.
+       “side effect” -- is a change in state (contents of variables,
+         I/O) in the program that the caller or user can detect
+
+    Q. is that similar to noexcept keyword in C++
+    A. not sure; what’s noexcept? But “pure” is stronger than
+        simply “I don’t throw exceptions”; it also means
+    “I won’t change any storage that you can see.”
+
+          char x = *p;
+      int h = hash(p);
+      char y = *p;    // x must equal y because ‘hash’ is pure
+
+
+   You can also tell GCC that a function is “const”.
+      int square(int) __attribute__ ((const));
+     A const function is pure
+
+out of time. more next time.
+		
+		

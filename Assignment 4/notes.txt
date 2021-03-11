@@ -1,0 +1,499 @@
+Laboratory A: Exploring a linear development history
+This lab uses the development repository for the Time Zone Database (tzdb).
+
+1. Use GitHub from a browser to compute the difference between the previous and current commit to this repository. 
+Save the resulting web page as a file (prevcur.html).:
+
+https://docs.github.com/en/github/committing-changes-to-your-project/comparing-commits
+
+https://github.com/github/linguist/compare/c3a414e..faf7c6f
+
+https://github.com/eggert/tz/compare/HEAD..HEAD^
+
+C-s prevcur.html
+
+
+
+
+2. Use GitHub from a browser to compute the difference between tzdb releases 2020f and 2021a. 
+Save the resulting web page as a file (2020f-2021a.html).
+
+https://github.com/eggert/tz/compare/2020f..2021a
+
+C-s 2020f-2021a.html
+
+
+
+3. Clone the tzdb development repository, in Git format.
+
+(git clone https://github.com/eggert/tz.git) : in seasnet
+
+
+
+4. Write a shell or Python script (justone) that displays the difference from the previous and current commit, 
+assuming the repository is what an ordinary Git command would use. 
+Use your command on the just-cloned repository, and put the output of your command into a file (justone.out).
+
+
+emacs justone
+chmod u+x justone
+
+
+#!/bin/bash
+git diff HEAD^!
+
+
+
+./justone > justone.out
+
+./ (place to look for justone, this directory)
+../ for next directory up
+
+need to go into tz to run justone > justone.out
+
+But to acutally do: ../justone > ../justone.out
+
+
+
+
+
+5. Write a shell or Python script (compare-releases) that displays the difference between two tzdb releases given as arguments to the command. 
+For example, compare-releases 2020f 2021a should output the difference between tzdb release 2020f and tzdb release 2021a. 
+Put the output of this particular invocation into a file (2020f-2021a.diff).
+
+
+emacs compare-releases
+chmod u+x compare-releases
+
+
+#!/bin/bash
+git diff $1..$2
+
+go into tz
+
+../compare-releases 2020f 2021a > ../2020f-2021a.diff
+
+#! vs #! : computer doesn't know I am using bash, rest of command > filename : special character sequence, bash doen't know what I am doing 
+
+
+6. Suppose we're interested in the number of commits from each time zone. 
+Write a shell or Python script (tzcount) that 
+postprocesses the output of git log and outputs a simple report of time zones and number of commits from that time zone. 
+Each line of output should look something like "-0500 1802", meaning there were 1802 commits from the -0500 time zone. 
+Sort the output numerically by its first (numeric timezone) column. 
+Run the command (git log 2021a | ./tzcount) using the tzdb repository, and put its output into a file (tzdb-2021a.tzcount).
+
+git log : to see what the output of the log is 
+
+emacs tzcount.py
+
+cd tz
+
+#!/usr/bin/python
+#tell computer to use python to run this program
+
+import sys
+import string
+
+def main():
+    
+    #Convert git log input to usable data structure
+    #Go line by line, filter for the "Date: …" lines
+    #Then filter for the <timezone> in the Date line
+    #Count how many times each timezone appears
+    #Sort and print the results
+    
+    
+    # strip off the newline characters on the right
+    
+    input = []
+    for line in sys.stdin:
+        input.append(line.rstrip())
+
+    timeZoneCount = []
+
+    for info in input:
+        if ('Date:' in info):
+            holder = info.split()
+            inTimeZoneCount = False
+            for timeZone in timeZoneCount:
+                #print(timeZone)
+                #print(holder)
+                if( timeZone[0] == holder[6]):
+                    timeZone[1] = timeZone[1] + 1
+                    inTimeZoneCount = True
+                    break
+            if(inTimeZoneCount == False):
+                timeZoneCount.append([holder[6], 1])
+                
+    #------------------------------------------------------------------------------------------------
+
+    timeZoneCount.sort()
+
+    #stdout
+    print(timeZoneCount)
+
+
+if __name__ == "__main__":
+    main()
+
+
+git log | python3 ../tzcount.py
+
+git log 2021a | python3 ../tzcount.py > ../tzdb-2021a.tzcount
+
+
+
+
+
+
+
+7. Suppose the maintainer of tzdb is being sued for copyright infringement because one of the source files contains the following statement: 
+"Even newspaper reports present contradictory information." 
+Also suppose the plaintiff claims that this statement was improperly copied from the plaintiff's book. 
+Use Git and other commands to find out how this statement was introduced to the tzdb files. 
+Create a text file (who-contributed.txt) that describes what commands and/or scripts that you used, and what the result of your investigation was.
+
+emacs who-contributed.txt
+
+
+git log -S <searchString> : when the given string was added to removed from the repo
+
+git log -S "Even newspaper reports present contradictory information."
+
+
+commit c12b432741eed9a422fbf99fa27af6e7a941d88b
+Author: Arthur David Olson <ado@elsie>
+Date:   Thu Dec 21 11:43:42 1995 -0500
+
+    Eggert changes
+
+    SCCS-file: northamerica
+    SCCS-SID: 7.20
+
+
+git show c12b4327
+
+q to quit
+SPC (space) to continue
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+Laboratory B: Exploring nonlinear development histories
+There is a copy of some version of the GNU Emacs git repository's master branch on SEASnet in the directory ~eggert/src/gnu/emacs.
+
+1. Find the mergepoint M at 7dd52bfd8e503316b4aa9c5767850d3985626b26 (2020-10-17) 
+and the commit C at c00606171f88be0df2c19346fa53f401ea71c71f (2020-10-10) 
+and describe the relationship between C and M, by drawing a graph containing all paths from C to M.
+Your diagram need not list every commit in all the paths, but you should label and list every commit with more than one parent, or with more than one child. 
+For example, your graph should have a node labeled C and M because C has multiple childen and M has multiple parents, and the graph’s legend should say that 
+C is c00606171f88be0df2c19346fa53f401ea71c71f and that M is 7dd52bfd8e503316b4aa9c5767850d3985626b26.
+
+cd ~eggert/src/gnu/emacs
+
+
+git log --graph
+
+git log --graph --pretty=format:"%h %s"
+
+https://git-scm.com/docs/pretty-formats
+
+
+git log --graph --pretty=format:"%h %s" > ~/CS97/Assignment4/outputOfLab1
+
+Line 384 to line 526
+
+
+Need to look down to up, as the most recent is the top
+Start at line 526
+	In the second branch, a commit was made (c00606)
+Then, next a merge occured at (0ed0da) to join all the commits in the second branch to the first 
+Then, from 523 (46c0f) to 403 (e569efb) there are just commits in the first branch 
+Next, at 402 (f539ee) a commit occured in the second branch
+Then at 400 (2f4505) a merge occured to combined the change at (f539ee) to all the commits in the first branch
+Next, 2 more commmits were added to the second branch (2c31ce) and (7d598e)
+Then, the second branch broke off to 2 seperate branches, 2a and 2b
+2a had a bunch of commits from line 396(ace25f) to 392 (65078)
+Then the first branch and 2a were merged at line 390 (3ac3a65)
+Next, a commit was added to 2a at line 389 (47b8a1)
+Then a merged occured to combine branch 1 and 2a at line 387 (ffd201)
+Then a commit occured in branch 2a at line 386 (18c0e20)
+Then a merged occured for branch 1 and 2a at line 384 (7dd52b)
+
+So I showed the full process between the 2 commit id's that I was asked. 
+
+
+
+
+
+
+2. Clone the GNU Emacs git repository yourself from Savannah, and briefly describe the differences between your repository and the one in ~eggert/src/gnu/emacs. 
+(Hint: look at the output of (git branch).)
+Put your descriptions into a text file (emacs.txt). Put your diagram into a PDF file (emacs-graph.pdf).
+
+emacs emacs.txt
+
+
+git clone https://git.savannah.gnu.org/git/emacs.git 
+
+cd emacs
+
+git branch > ../branchSavannah
+
+Go into eggerts
+
+git branch > ~/CS97/Assignment4/branchEggerts
+
+The branch for Savannah just says *master
+While the branch for Eggerts gives a whole list of branches:
+  comment-cache
+  concurrency-libtask
+  dima_regex_embedded_modifiers
+  elparized-core
+  emacs-23
+  emacs-24
+  emacs-25
+  emacs-26
+  emacs-27
+  feature/async-dns
+  feature/auth-source-pass
+  feature/byte-switch
+  feature/byte-tail-recursion
+  feature/byte-unwind-protect
+  feature/core-elpa-by-copy
+  feature/deps-download
+  feature/etags-update
+  feature/extend_face_id
+  feature/gnus-select
+  feature/gnus-select2
+  feature/integrated-elpa
+  feature/libjit
+  feature/mhtml-mode
+  feature/new-tutorial
+  feature/noverlay
+  feature/parsable-ert-output
+  feature/smaller-windows
+  feature/stdout-stderr-stream
+  feature/tabs
+  feature/temacs-for-bootstrap
+  feature/tramp-thread-safe
+  feature/windows-with-utils
+  features/erc-message-tags
+  fix/bootstrap-build-minimize
+  fix/bootstrap-build-minimize-squash
+  fix/bug-2034
+  fix/bug-20871
+  fix/bug-21072
+  fix/bug-31311-pcase-doc
+  fix/bug-31311-pcase-doc-squash
+  fix/bug-34657-erc-hooks
+  fix/bug-35351
+  fix/eieio-persistent
+  fix/great-revert-bill
+  fix/htmlfontify-21990
+  fix/not-defined-at-runtime
+  gtk-tabs
+  heads/emacs-25.3
+* master
+  netsec
+  nick.lloyd-bytecode-jit
+  old-branches/EMACS_21_1_RC
+  old-branches/EMACS_22_BASE
+  old-branches/EMACS_23_1_RC
+  old-branches/NewVC-fileset
+  old-branches/branch-5_8
+  old-branches/cairo
+  old-branches/cedet-branch
+  old-branches/concurrency
+  old-branches/dynamic-modules-rc2
+  old-branches/emacs-unicode
+  old-branches/emacs-unicode-2
+  old-branches/font-backend
+  old-branches/gerd_defvaralias
+  old-branches/gnus-5_10-branch
+  old-branches/imagemagick
+  old-branches/lexbind
+  old-branches/lexbind-new
+  old-branches/multi-tty
+  old-branches/pending
+  old-branches/profiler
+  old-branches/python
+  old-branches/rmail-mbox-branch
+  old-branches/unicode-xft
+  old-branches/window-pub
+  other-branches/Boehm-GC
+  other-branches/Boehm-versions
+  other-branches/DAVELOVE
+  other-branches/FLYSPELL
+  other-branches/ILYA
+  other-branches/VENDOR
+  other-branches/custom_themes
+  other-branches/fx-branch
+  other-branches/gerd_0001
+  other-branches/gerd_big
+  other-branches/gerd_dbe
+  other-branches/gerd_int
+  other-branches/miles-orphaned-changes
+  other-branches/old-bidi
+  other-branches/old-concurrency
+  other-branches/patches_21_0
+  other-branches/test2
+  other-branches/ttn-vms-21-2-stash
+  other-branches/ttn-vms-21-3-stash
+  pdumper
+  pending
+  project-next
+  scratch/a-modest-completion-redesign-proposal
+  scratch/accurate-warning-pos
+  scratch/add-jsonrpc
+  scratch/albinus
+  scratch/allow-custom-load-paths-in-elisp-flymake
+  scratch/allow-custom-null-and-false-objects-in-jsonc
+  scratch/api.el
+  scratch/benchmarks
+  scratch/build-test
+  scratch/completion-api
+  scratch/customize-quotes
+  scratch/dbusbind-type
+  scratch/dbusbind-type-tests
+  scratch/dir-local-wildcard
+  scratch/dynamic-modules-2
+  scratch/eudc-bbdb-3
+  scratch/fido-mode
+  scratch/fix-33794-extend-electric-layout-mode
+  scratch/fix-info-dups
+  scratch/fix-snapshot-building
+  scratch/flymake-augment-api
+  scratch/flymake-diagnostics-buffer
+  scratch/flymake-refactor-cleaner-for-emacs-26
+  scratch/follow
+  scratch/fontify-open-string
+  scratch/gnus-decoded
+  scratch/gnus-docs
+  scratch/gnus-hashtables
+  scratch/gnus-roadmap
+  scratch/gnus-search
+  scratch/hard-narrow
+  scratch/highlight-n-windows
+  scratch/isearch-show-toggles
+  scratch/jit-lock-antiblink
+  scratch/jit-lock-antiblink-cleaned-up
+  scratch/joaot/make-completion-at-point-function
+  scratch/kqueue
+  scratch/last-cedet-merge
+  scratch/merge-cedet-tests
+  scratch/multi-level-test-makefile
+  scratch/new-flex-completion-style
+  scratch/nonspecial-handlers
+  scratch/np/backports-26.2
+  scratch/ns/draw-to-bitmap
+  scratch/ns/next
+  scratch/nsxwidget
+  scratch/octave-eldoc-fixes
+  scratch/org-mode-merge
+  scratch/project
+  scratch/project-auto-tags
+  scratch/project-directories
+  scratch/project-directories-filtering-in-backend
+  scratch/project-directories-with-shallow
+  scratch/project-files-pipe-grep
+  scratch/quote-escaping
+  scratch/raeburn-startup
+  scratch/record
+  scratch/remove-internal-field
+  scratch/resolve-cc-mode-and-e-p-m
+  scratch/some-more-icomplete-hacks
+  scratch/support-plists-in-jsonc
+  scratch/support-plists-in-jsonc-autodetect
+  scratch/tsdh-vc-list-files
+  scratch/tzz/cicd
+  scratch/tzz/gnus-cloud-aead
+  scratch/tzz/import-pl
+  scratch/widen-less
+  scratch/widen-limits
+  scratch/windows-branch-build-2
+  scratch/with-fetched-url
+  scratch/xref
+  scratch/xref-next
+  shr-fontified
+  stream
+  test-concurrency
+  wallet
+  widen-less
+  x-tabs
+  xwidget
+  xwidget_mvp
+  z100
+  z101
+
+Someone maintins a personal clone, has his own stuff and older personal stuff, no one person can maintian it all. 
+Center place has more recent contirbutions (Savannah). 
+
+
+
+
+3. And now for a more open-ended search. The Git 2.30.1 Release Notes (2021-02-08) say 
+"Newline characters in the host and path part of git:// URL are now forbidden." 
+Which code change or changes actually made this happen, and who authored the change? 
+Do not worry about subsequent administrative changes such as merge commits; 
+look for the original changes that actually fixed the problem in question. 
+Give the SHA1 commit IDs for the relevant changes, and explain how you discovered them, all in a text file (git.txt). 
+Also generate patch files for the relevant changes, in (git format-patch) format.
+
+
+https://giclone https://github.com/git/git/ 
+
+git format-patch -1 <commitID>
+
+git log -S "Newline characters in the host and path part of git:// URL are now forbidden."
+
+git log -S "Newline characters in the host and path part of"
+	(To search for the text line that I was asked)
+
+Got 2 commits that matched the text string: d5922333 and e6362826
+
+git show d5922333
+- Can't find anything here
+- Nothing to follow in this commit. 
+
+git show e6362826
+-Has a merge id of 6aed56736b in the comment section about the newline character. 
+
+	git show 6aed56736b
+	- note says to go to the previous commit
+
+  		- need to go to previous commit: git show 6aed56736b^
+  		git log 6aed56736b^
+  		- which is the id a02ea577
+
+    			git show a02ea577
+    			- git log a02ea577
+			- nothing else to follow here, so I am finished at a02ea577
+
+
+
+git format-patch e6362826 > ../e6362826patchFile.patch
+
+git format-patch 6aed56736b > ../6aed56736bpatchFile.patch
+
+git format-patch a02ea577 > ../a02ea577patchFile.patch
+
+
+
+
+tar -tvf gitlabs.tar.gz *
+
+tar -czvf gitlabs.tar.gz *
+
+
+
+
+
+
+
+
+
+
+

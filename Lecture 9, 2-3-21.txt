@@ -1,0 +1,854 @@
+Lecture 9, 2-3-21 Lecture
+
+Git (basics only)
+	Software development is more and more a group process
+	Big picture: Git is a collaboration tool for developers 
+
+Today: Git from the newbie user point of view
+	a lot of details omitted
+	so that I can read the documentation more efficiently
+
+2 things:
+	object database contains *history* of my software project 
+		- all interesting versions of all files you've ever created
+	index file contains * my plans for the future* of my software project
+		- caches the source code (files, directories) 
+		- create *commits* - changes to your history
+		- handle *merges* - dealing with alternative futures 
+
+The basics (from the shell point of view)
+
+To get started:
+	git init	- creates a repository from scratch 
+	git clone	- makes a copy of an existing repository, (what everybody uses)
+		
+		You can clone from a remoste site:
+			Your 'git' inovation acts like a client.
+			A 'git' server on the other end, can inspect its repository and ship it off to you. 
+
+	You can clone from a local copy.
+	git clone DIR	- DIR is your local repository
+
+	git add FILE	- you tell Git that FILE's current contents are part of an intended change to the system
+
+	git commit	- you tell GIt you're happy with your changes, and you want to make a commit;
+				i.e., a new version in the history, reflecting these changes
+
+	git commit -m' commit message'	- specifiy commit message (instead of default, drop you into Emacs etc.)
+
+	git commit -a	- 'git add everything' + 'git commit', (Not a good idea unless you know what you're doing)
+
+	git add	FILE	- Tells git that you plan to make all the changes in that FILE. 
+			- It tells that by (in effect) copying FILE's contents into the index.
+			- That part of the index is a cache of the "next" version that you plan to commit.  
+
+	^, end of entro to commands that will change a git repository
+
+	======================================================================================================================
+
+	\/, start of intro to commands that inspect a git repository
+
+	git diff	- difference between your plans and the working files 
+
+	get diff --cached	- difference between most recent commit and your plans
+	
+	get diff A..B	- difference between versions A and B
+
+	get diff A^!	- difference between A's previous version and A
+
+		Aside: some of an algebra for versions.
+			commit ID	- hexadeicmal number (details later)
+			V^		- previous version to V
+			V^^		- previous, previous verstion to V
+			HEAD		- latest version in your branch 'git diff A...HEAD' - output all version between version A and the HEAD
+			tagname		- version tagged with tagname
+			You can abbreviate hexidemical commit IDs as long as it's not ambigious (can't have 1 char, need multiple, at least 5 or so)
+
+	git log --summary 	--shorter version of log file
+	
+	git log --pretty=fuller	--longer version (lots of other options_
+
+	git ls-files		- list names of files under version control in current version
+
+	git grep 		- like 'grep $(git ls-files)'
+				- grep: GLobal Regular Expression Print
+				- globaily look in a file and print every revelent file
+	
+	git status		- tells you what's not in your history yet 
+
+	git config -l		- tells you your Git configuration
+
+	git show COMMIT		- tells you about the commit
+
+	git pull		= get fetch + git checkout
+	
+	get fetch		- copies latest history from upstream into your repository
+	
+	upstream		- where you cloned from 
+				Ideally - no problem; you just update your master version; done
+				But what if upstream disagrees with you?
+				In that case, git does a merge - this is a big deal. 
+				Look in .git/config for where your 'upstream" is.
+				It's another repository, called the 'remote', that contains where your repository was cloned from. 
+
+*************************************************************************************************************************************************
+UCLA CS 97 lecture 2021-02-03
+
+midterm next time
+  see Friday discussion for details
+  24-hour window to finish a CCLE quiz (2-hour quiz)
+  little Zoom section at the start of the lecture (quiz released after that)
+  cover all material in homeworks, lecture, discussion
+    (except for Git in today’s lecture; other topics today are fair game)
+
+Git (basics only)
+  you need to “git good at doing git”
+  BECAUSE software development is more and more a group process
+  Big Picture: Git is a collaboration tool for developers
+
+Today: Git from the newbie user point of view
+   a lot of details omitted
+   so that you can read the documentation more efficient
+
+Two things:
+
+   object database contains *history* of your software project
+      - all interestings versions of all files you’ve ever created
+
+   index file contains *your plans for the future* of your software project
+      - caches the source code (file, directories)
+      - create *commits* - changes to your history
+      - handles *merges* - dealing with alternative futures
+
+Q. Why “git - the stupid content tracker” in the man page?
+A. Linus Torvalds is telling you that Git is really simple inside.
+   Git is not intended to help you write your software.
+   It doesn’t know about programs or anything like that.
+   It’s really dumb - no knowledge about content.
+      It’s like POSIX files - they’re just byte sequences.
+
+Q. So if you're on windows, so in order to use git, how do we get it?
+A. git-scm.org or ask a TA.
+
+Q. Im really confused about the future part. Like how can it know
+what’s our future plan?
+A. We tell it, I’ll show you how.
+
+The basics (from the shell point of view)
+
+1. To get started:
+
+    git init   - creates an empty, repository from scratch
+
+    git clone  - makes a copy of an existing repository
+                   (this is what everybody uses)
+        You can clone from a remote site:
+      Your ‘git’ invocation acts like a client.
+      A ‘git’ server on the other end, can inspect its
+        repository and ship it off to you.
+
+        You can clone from a local copy.
+       git clone DIR   - DIR is your local repository
+
+
+Q. whats different from git cloning ur local files vs just using cp
+A. Use ‘diff’ to find out.
+    The .git subdirectory’s configuration will differ -
+      because you cloned just one branch
+      You also don’t clone all the logs - metainformation about
+         updates, planned futures, etc.
+      You clone only what’s under Git control.  - Git normally
+         doesn’t control everything, just the stuff you care about.
+
+Q. which directory does it copy the repository into, and is there
+anyway to change it?
+A. It copies into a subdirectory with the same name as the repository
+You can change that with an additional operand to ‘git clone’.
+
+Q. wait wouldnt 620748 be kilobytes? Or is that number given in kilobytes instead of bytes?
+A. That number was in KiB. (default unit for ‘du’)
+
+Q. 620mb seems too big
+A. Yes it does; but we have (1) a history of all of Emacs development
+   sitting in the .git subdirectory (466 MB) (2) a copy of the latest version
+   (636 MB - 466 MB).
+
+Q. What does meta information mean?
+A. Let’s think by analogy with files.
+    notes.txt contains data
+    ls -l notes.txt tells you metainformation about the data
+    (not in a POSIX filesystem) previous version? most recently backed up?
+
+
+2. To get started some more.
+
+  git add FILE   - you tell Git that FILE’s current contents
+                    are part of an intended change to the system
+
+  git commit     - you tell Git you’re happy with your changes,
+                 and you want to make a commit;
+           i.e., a new version in the history, reflecting these chagnes.
+
+  Q. in the in-between stage of editing the file and adding it, where
+  is the change file stored?
+  A. It’s not stored by Git; Git doesn’t “know” about it.
+     It’s in the working file.
+
+  git commit -m'commit message'  - specify commit message (instead
+                                    of default, drop you into Emacs etc.)
+  git commit -a   - ‘git add everything’ + ‘git commit’
+     Not a good idea unless you know what you’re doing.
+
+
+Q. what does "git add FILE" do again?
+A. It tells git that you plan to make all the changes in FILE.
+   It does that by (in effect) copying FILE’s contents into the index.
+     That part of the index is a cache of the “next” version that you plan
+     to commit.
+
+Q. when you say working files, do you mean the original files in the
+repository that hasn’t been committed with new changes yet?
+A. Some of these files may not be changed at all, but they’re still
+working files.  Others of these files may not have been changed
+since they were added, they’re not committed yet, but they’re in
+yhour plans.  Still other files may differ with both the latest
+and with the plans for your next version.
+
+ end of intro to commands that will change a git repository
+========
+ start of intro to commands that inspect a git repository
+   (these are used more often)
+
+  git diff       - difference between your plans and the working files
+  git diff --cached - difference between most recent commit and your plans
+  git diff A..B  - difference between versions A and B
+  git diff A^!   - difference between A’s previous version and A
+
+     Aside: some of an algebra for versions.
+        commit ID - hexadecimal number (details later)
+    V^        - previous version to V
+    V^^       - previous previous version of V
+        HEAD      - latest version in your branch  ‘git diff A..HEAD’
+        tagname   - version tagged with tagname
+          you can abbreviate hexadecimal commit IDs
+      as long as it’s not ambiguous
+
+
+  Q. Can you use git diff across a branch other than “master”
+  A. Yes, lots of options.  ‘git diff B’ where B is a branch,
+     tells you the difference between B’s latest version,
+     and the working files.
+
+
+Q. when you say git diff compares your working files with your plans,
+then does git diff B (B being another branch) compare the branch's
+plans or branch's latest commit?
+A. It compares the branch’s latest commit to the working files.
+Your plans are for the current branch.
+
+Q.  when adding a working file that has been already been changed, how
+can the diff compare the future with the original version of that
+working file? is it being stored somewhere?
+A.  Yes, all old versions of all files are stored in the history somehow.
+
+Q. How do we open a specific version of git?
+A. ‘git --version’ tells you Git’s version number; you can download
+and install any version you like.
+
+Q. Suppose we want an old version of Emacs, instead of the latest version.
+A. ‘git checkout V’, where V is the version that you want.
+
+Q. what is the difference between git checkout and git clone?
+A. git clone copies an entire repository (all history), then it
+does a git checkout in the new repository so you now have a copy of
+all the working files.  ‘git checkout’ merely retrieves working files.
+
+Q. If we modify something from 2002, is the 2002 updated git log now
+the current ?
+A. If I were to go back I could construct an alternate history,
+but I can’t change what’s there now.
+
+Q. what did git checkout -f INSTALL do again?
+A. Copy the master version of INSTALL out of the history and the working
+file INSTALL, and don’t complain about it.
+
+
+   git log  -- logs everything
+   git log A..B   - log all changes from A to B
+   git log A^!    - log all changes in A only
+
+   git log --summary  -- shorter version of log file
+   git log --pretty=fuller  -- longer version (lots of other options)
+
+   git ls-files   - list names of files under version control in current version
+
+   git grep -  like ‘grep $(git ls-files)’
+     grep - Global Regular Expression Print
+     T-shirt - “Reach out and grep somebody.”
+
+   git status - tells you what’s not in your history yet
+
+   git config -l - tells you your Git configuration
+
+   git show COMMIT - tells you about the commit
+
+
+Q. does git status give info about files that have not yet been committed or not yet been added?
+A. Yes, it does, e.g., INSTALL.linux in our example.
+
+
+
+   git pull = git fetch + git checkout
+     git fetch - copies latest history from upstream into your repository
+        upstream - where you cloned from
+       Ideally - no problem; you just update your master version; done
+    But what if upstream disagrees with you?
+
+          In that case, git does a merge - this is a big deal.
+
+
+Q. what’s upstream again?
+A. Look in .git/config for where your “upstream” is.
+   It’s another repository, called the ‘remote’, that contains
+   where your repository was cloned from.
+
+Q. When you call git pull, does your version get overwritten or are
+the versions just “combined”?
+A. Yes.  (Details later.)
+
+Q. Why is merge a big deal?
+A. Because it’s error-prone: you have two competing developers who are
+“fighting” over the source code, how does Git know who’s right?
+(It doesn’t.)
+
+Q. What is the difference between git pull, git fetch, and git checkout?
+A. git checkout - copy from your repository to your working files
+   git fetch - copy from your upstream repository in your repository
+   git pull - git fetch + git merge + git checkout
+
+
+
+---- shell transcript (with edits to remove long outputs) -----
+
+501-day $ pwd
+/home/eggert/class/cs97/2021-winter/2021-02-03
+502-day $ git clone git://git.savannah.gnu.org/emacs.git
+Cloning into 'emacs'...
+remote: Counting objects: 925011, done.
+remote: Compressing objects:  98% (161356/163950)             C-c C-c
+503-day $ ls
+'#notes.txt#'   notes.txt
+504-day $ git clone $HOME/src/gnu/emacs/master
+Cloning into 'master'...
+done.
+Updating files: 100% (4388/4388), done.
+505-day $ ls -l
+total 12
+drwxrwxr-x 20 eggert eggert 4096 Feb  3 12:22  master
+-rw-rw-r--  1 eggert eggert 2039 Feb  3 12:21 '#notes.txt#'
+-rw-rw-r--  1 eggert eggert 1452 Feb  3 12:14  notes.txt
+506-day $ cd master
+507-day $ cd ..
+508-day $ pwd
+/home/eggert/class/cs97/2021-winter/2021-02-03
+509-day $ rm -fr master
+510-day $ time git clone $HOME/src/gnu/emacs/master
+Cloning into 'master'...
+done.
+
+real    0m1.044s
+user    0m0.689s
+sys    0m0.301s
+511-day $ du -s master
+620748    master
+512-day $ # 620 MiB of data (includes all the history of Emacs dev) in 1 second.
+513-day $ diff -qr $HOME/src/gnu/emacs/master master >/tmp/diff.out
+514-day $ pwd
+/home/eggert/class/cs97/2021-winter/2021-02-03
+515-day $ pwd
+/home/eggert/class/cs97/2021-winter/2021-02-03
+516-day $ du --si
+377k    ./master/lwlib
+...
+466M    ./master/.git
+12M    ./master/admin
+636M    ./master
+636M    .
+518-day $ du -s --si master
+636M    master
+519-day $ du -s --si master/.git
+466M    master/.git
+520-day $ ls -l notes.txt
+-rw-rw-r-- 1 eggert eggert 1452 Feb  3 12:14 notes.txt
+521-day $ stat notes.txt
+  File: notes.txt
+  Size: 1452          Blocks: 8          IO Block: 4096   regular file
+Device: 10300h/66304d    Inode: 91226234    Links: 1
+Access: (0664/-rw-rw-r--)  Uid: ( 1000/  eggert)   Gid: ( 1000/  eggert)
+Access: 2021-02-03 12:33:44.414832872 -0800
+Modify: 2021-02-03 12:14:15.423010276 -0800
+Change: 2021-02-03 12:14:15.423010276 -0800
+ Birth: 2021-02-03 12:14:15.423010276 -0800
+522-day $ pwd
+/home/eggert/class/cs97/2021-winter/2021-02-03
+523-day $ cd master
+524-day $ ls
+admin         ChangeLog.2   COPYING    INSTALL.REPO  lwlib       msdos     src
+autogen.sh   ChangeLog.3   doc        leim          m4       nextstep  test
+BUGS         config.bat    etc        lib          make-dist    nt
+build-aux    configure.ac  GNUmakefile    lib-src       Makefile.in  oldXMenu
+ChangeLog.1  CONTRIBUTE    INSTALL    lisp          modules       README
+525-day $ # edit CONTRIBUTE
+526-day $ git add CONTRIBUTE
+527-day $ ls -a
+.         ChangeLog.2    .dir-locals.el  GNUmakefile   lwlib        nt
+..         ChangeLog.3    doc            INSTALL      m4           oldXMenu
+admin         .clang-format  etc            INSTALL.REPO  make-dist    README
+autogen.sh   config.bat     .git        leim      Makefile.in  src
+BUGS         configure.ac   .gitattributes  lib          modules      test
+build-aux    CONTRIBUTE     .gitignore        lib-src      msdos
+ChangeLog.1  COPYING        .gitlab-ci.yml  lisp      nextstep
+528-day $ git add INSTALL
+529-day $ git diff | cat
+diff --git a/INSTALL b/INSTALL
+index b2720be4f4..19ca3a2fe5 100644
+--- a/INSTALL
++++ b/INSTALL
+@@ -1,4 +1,4 @@
+-UCLA GNU Emacs Installation Guide
++UCLA Computer Science GNU Emacs Installation Guide
+ Copyright (C) 1992, 1994, 1996-1997, 2000-2021 Free Software Foundation,
+ Inc.
+ See the end of the file for license conditions.
+530-day $ pwd
+/home/eggert/class/cs97/2021-winter/2021-02-03/master
+531-day $ git commit -m'Sample simple set of changes to Emacs.' # Basic way to do it.
+[master 986ed4005a] Sample simple set of changes to Emacs.
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+532-day $ git log | head -n 20
+commit 986ed4005a91f07ba7a5def357a8a6b2840fbcf7
+Author: Paul Eggert <eggert@cs.ucla.edu>
+Date:   Wed Feb 3 12:46:14 2021 -0800
+
+    Sample simple set of changes to Emacs.
+
+commit f5d30d9d8b7665216e596b11730964937c6c610d
+Author: Paul Eggert <eggert@cs.ucla.edu>
+Date:   Wed Jan 27 10:10:44 2021 -0800
+
+    * admin/notes/unicode: titdic-cnv.el is now utf-8.
+
+commit 85f8b575001ec8c3503d7e8746862e49c0c7a3bf
+Author: Juri Linkov <juri@linkov.net>
+Date:   Wed Jan 27 20:08:43 2021 +0200
+
+    Support multi-line prompt and contents in previous-line-or-history-element.
+
+    * lisp/simple.el (previous-line-or-history-element): Move to the
+    beginning of minibuffer contents if there is editable minibuffer contents
+533-day $ git log | wc
+1305063 4560273 46081662
+534-day $ git log | tail -n 10
+Author: Jim Blandy <jimb@redhat.com>
+Date:   Sat Dec 14 16:58:10 1985 +0000
+
+    Initial revision
+
+commit ce5584125c44a1a2fbb46e810459c50b227a95e2
+Author: Jim Blandy <jimb@redhat.com>
+Date:   Thu Apr 18 00:48:29 1985 +0000
+
+    entered into RCS
+535-day $ diff 85f8b575001ec8c3503d7e8746862e49c0c7a3bf..f5d30d9d8b7665216e596b11730964937c6c610d | cat
+diff: missing operand after '85f8b575001ec8c3503d7e8746862e49c0c7a3bf..f5d30d9d8b7665216e596b11730964937c6c610d'
+diff: Try 'diff --help' for more information.
+536-day $ pwd
+/home/eggert/class/cs97/2021-winter/2021-02-03/master
+537-day $ diff 85f8b575001ec8c3503d7e8746862e49c0c7a3bf..f5d30d9d8b7665216e596b11730964937c6c610d -- | cat
+diff: missing operand after '85f8b575001ec8c3503d7e8746862e49c0c7a3bf..f5d30d9d8b7665216e596b11730964937c6c610d'
+diff: Try 'diff --help' for more information.
+538-day $ git diff 85f8b575001ec8c3503d7e8746862e49c0c7a3bf..f5d30d9d8b7665216e596b11730964937c6c610d | cat
+diff --git a/admin/notes/unicode b/admin/notes/unicode
+index 45455d897f..d69d5418e2 100644
+--- a/admin/notes/unicode
++++ b/admin/notes/unicode
+@@ -256,15 +256,6 @@ nontrivial changes to the build process.
+
+     etc/tutorials/TUTORIAL.ja
+
+- * iso-2022-7bit
+-
+-     This file contains multiple Chinese charsets, and converting it
+-     to UTF-8 would lose the charset property and would change the
+-     code's behavior.  Although this could be worked around by
+-     propertizing the strings, that hasn't been done.
+-
+-    lisp/international/titdic-cnv.el
+-
+  * utf-8-emacs
+
+      These files contain characters that cannot be encoded in UTF-8.
+539-day $ git diff ce5584125c44a1a2fbb46e810459c50b227a95e2^! | cat
+diff --git a/.clang-format b/.clang-format
+new file mode 100644
+index 0000000000..44200a3995
+--- /dev/null
++++ b/.clang-format
+@@ -0,0 +1,27 @@
++Language: Cpp
++BasedOnStyle: GNU
+...
+540-day $ git log | head -n 20
+commit 986ed4005a91f07ba7a5def357a8a6b2840fbcf7
+Author: Paul Eggert <eggert@cs.ucla.edu>
+Date:   Wed Feb 3 12:46:14 2021 -0800
+
+    Sample simple set of changes to Emacs.
+
+commit f5d30d9d8b7665216e596b11730964937c6c610d
+Author: Paul Eggert <eggert@cs.ucla.edu>
+Date:   Wed Jan 27 10:10:44 2021 -0800
+
+    * admin/notes/unicode: titdic-cnv.el is now utf-8.
+
+commit 85f8b575001ec8c3503d7e8746862e49c0c7a3bf
+Author: Juri Linkov <juri@linkov.net>
+Date:   Wed Jan 27 20:08:43 2021 +0200
+
+    Support multi-line prompt and contents in previous-line-or-history-element.
+
+    * lisp/simple.el (previous-line-or-history-element): Move to the
+    beginning of minibuffer contents if there is editable minibuffer contents
+541-day $ git diff 986ed4005a91f07ba7a5def357a8a6b2840fbcf7^! | cat
+diff --git a/CONTRIBUTE b/CONTRIBUTE
+index cb09391c32..7c89159ea5 100644
+--- a/CONTRIBUTE
++++ b/CONTRIBUTE
+@@ -1,4 +1,4 @@
+-* How developers contribute to GNU Emacs
++* How developers at UCLA contribute to GNU Emacs
+
+ Here is how software developers can contribute to Emacs.  (Non-developers: see
+ https://www.gnu.org/software/emacs/manual/html_node/emacs/Contributing.html
+diff --git a/INSTALL b/INSTALL
+index b6f681a153..b2720be4f4 100644
+--- a/INSTALL
++++ b/INSTALL
+@@ -1,4 +1,4 @@
+-GNU Emacs Installation Guide
++UCLA GNU Emacs Installation Guide
+ Copyright (C) 1992, 1994, 1996-1997, 2000-2021 Free Software Foundation,
+ Inc.
+ See the end of the file for license conditions.
+542-day $ git --version
+git version 2.27.0
+543-day $ git log >/tmp/log
+544-day $ ls -l /tmp/log
+-rw-rw-r-- 1 eggert eggert 46081662 Feb  3 13:16 /tmp/log
+545-day $ git checkout 80b473796a21d013ef78787c89ec3e8dc45d34bb
+error: Your local changes to the following files would be overwritten by checkout:
+    INSTALL
+Please commit your changes or stash them before you switch branches.
+Aborting
+546-day $ git checkout -f INSTALL
+Updated 1 path from the index
+547-day $ git checkout 80b473796a21d013ef78787c89ec3e8dc45d34bb
+Updating files: 100% (5412/5412), done.
+Note: switching to '80b473796a21d013ef78787c89ec3e8dc45d34bb'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+HEAD is now at 80b473796a * gnus-art.el (gnus-article-edit-mode): Use define-derived-mode.     From:  Stefan Monnier  <monnier@cs.yale.edu>
+548-day $ git checkout master
+Previous HEAD position was 80b473796a * gnus-art.el (gnus-article-edit-mode): Use define-derived-mode.     From:  Stefan Monnier  <monnier@cs.yale.edu>
+Switched to branch 'master'
+Your branch is ahead of 'origin/master' by 1 commit.
+  (use "git push" to publish your local commits)
+549-day $
+549-day $
+549-day $ git checkout 80b473796a21d013ef78787c89ec3e8dc45d34bb
+Note: switching to '80b473796a21d013ef78787c89ec3e8dc45d34bb'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+HEAD is now at 80b473796a * gnus-art.el (gnus-article-edit-mode): Use define-derived-mode.     From:  Stefan Monnier  <monnier@cs.yale.edu>
+550-day $ git diff | cat
+diff --git a/AUTHORS b/AUTHORS
+index 97d467c03c..8bfe1cf398 100644
+--- a/AUTHORS
++++ b/AUTHORS
+@@ -1,3 +1,4 @@
++Aaron Rodgers (changed) gbp.el
+ Aaron Larson (changed) bibtex.el
+ Aaron M. Ucko (changed) mail-source.el
+ Aaron M. Ucko (changed) message.el
+551-day $ git add AUTHORS
+552-day $ git commit -m'We changed 2002 history!'
+[detached HEAD 293dcf272b] We changed 2002 history!
+ 1 file changed, 1 insertion(+)
+553-day $ git log | head -n 20
+commit 293dcf272b5b42b3b712bd8fba1101245acba4c6
+Author: Paul Eggert <eggert@cs.ucla.edu>
+Date:   Wed Feb 3 13:23:14 2021 -0800
+
+    We changed 2002 history!
+
+commit 80b473796a21d013ef78787c89ec3e8dc45d34bb
+Author: ShengHuo ZHU <zsh@cs.rochester.edu>
+Date:   Wed Feb 13 17:35:19 2002 +0000
+
+    * gnus-art.el (gnus-article-edit-mode): Use define-derived-mode.
+            From:  Stefan Monnier  <monnier@cs.yale.edu>
+
+commit db54c53aa6b3ec0ae223fc18ba2be9fce58ac67f
+Author: Richard M. Stallman <rms@gnu.org>
+Date:   Wed Feb 13 16:24:33 2002 +0000
+
+    *** empty log message ***
+
+commit 925016524854e94ae41e2243734a232435c3dece
+554-day $ git checkout master
+Warning: you are leaving 1 commit behind, not connected to
+any of your branches:
+
+  293dcf272b We changed 2002 history!
+
+If you want to keep it by creating a new branch, this may be a good time
+to do so with:
+
+ git branch <new-branch-name> 293dcf272b
+
+Switched to branch 'master'
+Your branch is ahead of 'origin/master' by 1 commit.
+  (use "git push" to publish your local commits)
+555-day $ git ls-files | head
+.clang-format
+.dir-locals.el
+.gitattributes
+.gitignore
+.gitlab-ci.yml
+BUGS
+CONTRIBUTE
+COPYING
+ChangeLog.1
+ChangeLog.2
+556-day $ grep 'Hello, world' $(git ls-files)
+etc/HELLO:C    printf ("Hello, world!\n");
+test/manual/etags/CTAGS.good:hello    scm-src/test.scm    /^(set! hello "Hello, world!")$/
+test/manual/etags/scm-src/test.scm:(set! hello "Hello, world!")
+557-day $
+557-day $ git grep 'Hello, world' | cat
+etc/HELLO:C    printf ("Hello, world!\n");
+test/manual/etags/CTAGS.good:hello    scm-src/test.scm    /^(set! hello "Hello, world!")$/
+test/manual/etags/scm-src/test.scm:(set! hello "Hello, world!")
+558-day $ pwd
+/home/eggert/class/cs97/2021-winter/2021-02-03/master
+559-day $ git status | cat
+On branch master
+Your branch is ahead of 'origin/master' by 1 commit.
+  (use "git push" to publish your local commits)
+
+nothing to commit, working tree clean
+560-day $ ls
+admin         ChangeLog.2   COPYING    INSTALL.REPO  lwlib       msdos     src
+autogen.sh   ChangeLog.3   doc        leim          m4       nextstep  test
+BUGS         config.bat    etc        lib          make-dist    nt
+build-aux    configure.ac  GNUmakefile    lib-src       Makefile.in  oldXMenu
+ChangeLog.1  CONTRIBUTE    INSTALL    lisp          modules       README
+561-day $ echo xyz >>CONTRIBUTE
+562-day $ git status | cat
+On branch master
+Your branch is ahead of 'origin/master' by 1 commit.
+  (use "git push" to publish your local commits)
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+    modified:   CONTRIBUTE
+
+no changes added to commit (use "git add" and/or "git commit -a")
+563-day $ git add CONTRIBUTE
+564-day $ git status | cat
+On branch master
+Your branch is ahead of 'origin/master' by 1 commit.
+  (use "git push" to publish your local commits)
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+    modified:   CONTRIBUTE
+
+565-day $ echo "New file contents" >INSTALL.linux
+566-day $ git status | cat
+On branch master
+Your branch is ahead of 'origin/master' by 1 commit.
+  (use "git push" to publish your local commits)
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+    modified:   CONTRIBUTE
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+    INSTALL.linux
+
+567-day $
+567-day $
+567-day $ git config -l
+WARNING: terminal is not fully functional
+-  (press RETURN)q
+568-day $ 568-day $ git config -l | cat
+push.default=simple
+user.name=Paul Eggert
+user.email=eggert@cs.ucla.edu
+user.signingkey=7E3792A9D8ACF7D633BC1588ED97E90E62AA7E34
+sendemail.smtpencryption=ssl
+sendemail.smtpserver=zimbra.cs.ucla.edu
+sendemail.smtpuser=eggert
+sendemail.smtpserverport=465
+pull.ff=only
+core.repositoryformatversion=0
+core.filemode=true
+core.bare=false
+core.logallrefupdates=true
+remote.origin.url=/home/eggert/src/gnu/emacs/master
+remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
+branch.master.remote=origin
+branch.master.merge=refs/heads/master
+569-day $ ls
+admin         ChangeLog.3   etc          lib         Makefile.in  README
+autogen.sh   config.bat    GNUmakefile      lib-src    modules      src
+BUGS         configure.ac  INSTALL      lisp         msdos      test
+build-aux    CONTRIBUTE    INSTALL.linux  lwlib      nextstep
+ChangeLog.1  COPYING       INSTALL.REPO   m4         nt
+ChangeLog.2  doc       leim          make-dist  oldXMenu
+570-day $ ls -a
+.         ChangeLog.2    .dir-locals.el  GNUmakefile    lisp        nextstep
+..         ChangeLog.3    doc            INSTALL       lwlib    nt
+admin         .clang-format  etc            INSTALL.linux  m4        oldXMenu
+autogen.sh   config.bat     .git        INSTALL.REPO   make-dist    README
+BUGS         configure.ac   .gitattributes  leim       Makefile.in    src
+build-aux    CONTRIBUTE     .gitignore        lib           modules    test
+ChangeLog.1  COPYING        .gitlab-ci.yml  lib-src       msdos
+571-day $ ls .git
+branches    config         HEAD   index  logs     packed-refs
+COMMIT_EDITMSG    description  hooks  info   objects  refs
+572-day $ cat .git/config
+[core]
+    repositoryformatversion = 0
+    filemode = true
+    bare = false
+    logallrefupdates = true
+[remote "origin"]
+    url = /home/eggert/src/gnu/emacs/master
+    fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "master"]
+    remote = origin
+    merge = refs/heads/master
+573-day $ git log | head
+commit 986ed4005a91f07ba7a5def357a8a6b2840fbcf7
+Author: Paul Eggert <eggert@cs.ucla.edu>
+Date:   Wed Feb 3 12:46:14 2021 -0800
+
+    Sample simple set of changes to Emacs.
+
+commit f5d30d9d8b7665216e596b11730964937c6c610d
+Author: Paul Eggert <eggert@cs.ucla.edu>
+Date:   Wed Jan 27 10:10:44 2021 -0800
+
+574-day $ git show 986ed4005a91f07ba7a5def357a8a6b2840fbcf7 | cat
+commit 986ed4005a91f07ba7a5def357a8a6b2840fbcf7
+Author: Paul Eggert <eggert@cs.ucla.edu>
+Date:   Wed Feb 3 12:46:14 2021 -0800
+
+    Sample simple set of changes to Emacs.
+
+diff --git a/CONTRIBUTE b/CONTRIBUTE
+index cb09391c32..7c89159ea5 100644
+--- a/CONTRIBUTE
++++ b/CONTRIBUTE
+@@ -1,4 +1,4 @@
+-* How developers contribute to GNU Emacs
++* How developers at UCLA contribute to GNU Emacs
+
+ Here is how software developers can contribute to Emacs.  (Non-developers: see
+ https://www.gnu.org/software/emacs/manual/html_node/emacs/Contributing.html
+diff --git a/INSTALL b/INSTALL
+index b6f681a153..b2720be4f4 100644
+--- a/INSTALL
++++ b/INSTALL
+@@ -1,4 +1,4 @@
+-GNU Emacs Installation Guide
++UCLA GNU Emacs Installation Guide
+ Copyright (C) 1992, 1994, 1996-1997, 2000-2021 Free Software Foundation,
+ Inc.
+ See the end of the file for license conditions.
+575-day $ git log | head
+commit 986ed4005a91f07ba7a5def357a8a6b2840fbcf7
+Author: Paul Eggert <eggert@cs.ucla.edu>
+Date:   Wed Feb 3 12:46:14 2021 -0800
+
+    Sample simple set of changes to Emacs.
+
+commit f5d30d9d8b7665216e596b11730964937c6c610d
+Author: Paul Eggert <eggert@cs.ucla.edu>
+Date:   Wed Jan 27 10:10:44 2021 -0800
+
+576-day $ git log f5d30d9^! | cat
+commit f5d30d9d8b7665216e596b11730964937c6c610d
+Author: Paul Eggert <eggert@cs.ucla.edu>
+Date:   Wed Jan 27 10:10:44 2021 -0800
+
+    * admin/notes/unicode: titdic-cnv.el is now utf-8.
+577-day $ git log f^! | cat
+fatal: ambiguous argument 'f^!': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git <command> [<revision>...] -- [<file>...]'
+578-day $ git log v19.32 | cat
+fatal: ambiguous argument 'v19.32': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git <command> [<revision>...] -- [<file>...]'
+579-day $ git log emacs-27.1.90^! | cat
+commit 37eba74d609c74bcf9ac3c481a29377913783ac4
+Author: Eli Zaretskii <eliz@gnu.org>
+Date:   Fri Dec 18 10:13:53 2020 -0500
+
+    Update files for the 27.1.90 pretest
+
+    * README:
+    * configure.ac:
+    * nt/README.W32:
+    * msdos/sed2v2.inp: Bump Emacs version to 27.1.90.
+    * lisp/ldefs-boot.el: Update from loaddefs.el
+580-day $
+
+
+
+
+
+

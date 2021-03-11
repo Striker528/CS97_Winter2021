@@ -1,0 +1,392 @@
+Lecture 2 1-6-21
+
+Three topics:
+*Emacs intro - text editor + development environement ) MIT thing- 1980's (runs atop of Unix)
+*Unix/Linux/POSIX file system organization            ) Bell Labs thing- 1970's
+*Command-line basics and the Unix/Linux/POSIX shell   )
+
+We're devleoping apps, and we want them to:
+  * survive power outages and system crashes 
+    (persistence) (persistent data)
+  * be fast (so we cannot make *everything* persistent, because secondary storage is too slow, 
+    aside: hard disks are pretty slow
+           flash drives are still too slow for interactive
+           newer devices may be better)
+  * be understandable (easy to 1)read, 2)maintain, 3)write)
+
+Emacs provides a view into this situation (a bit tricky, since Emacs itself is an app).
+ Which means you can use Emacs to view itself!
+ It's *reflective*, it can look at itself in a "mirror".
+ Also, it's not magic - you could have written it yourself 
+                      - there's no secret sauce. 
+ And people have!
+
+I've been typing using the keyboard. Occasionally I put in new blank lines.
+By typing Enter.
+If I'm courious about how that works, I can type this.
+	C-h k Enter
+Hold down Control key, and type h
+Type k
+Type Enter
+
+Emacs then pops up a *Help* buffer that explains to experts what that key will do. 
+
+Q. How can you enter emacs to edit a txt file.
+- Log into SEASnet and show you
+- 12:18
+- Shell command: 'emacs' filename'
+- I usually just type plain 'emacs'
+	C-x C-f filename RET
+	 
+C-x means "Hold down Ctrl key, and type x"
+RET means Enter (or Return) key
+SPC means space
+ESC means Escape 
+C-x C-f runs "find-file" 
+ - it creats a new buffer holding the contents of the named file, and then switches to that buffer
+
+Some terminology:
+file - persistent sequence of bytes stored in a filesystem. Shared among applications
+filesystem - persistent data structure that represents a set of files
+buffer - (Emacs)sequence of bytes in Emacs that is non-persistent
+window - (Emacs) view of a buffer
+	There are 2 windows on professor's screen, one looks at notes.txt buffer, and the other looks at the *Help* buffer
+	Each window has a "mode line" telling you about the window. 
+	Window's have a (typically) limited view of the buffer content
+frame - (Emacs) what everybody else calls a window
+	Zoom calls frames "windows" 
+
+Q. Do we need to ssh wit hx forwarding enabled into seasnet if we want the gui like you have?
+A: Yes, if you want to run an Emacs GUI. The professor never does, he runs it in terminal mode because the network latency is irritating
+
+Q. ssh
+A. Secure SHell (aside:marketing term)
+   Establishes an encrypted etc. (relativly secure) connection between my computre and (say) SEASnet
+
+
+ C-x 0 (close this window)
+ C-x 1 (close all other windows)
+
+C-h b (list of all your keybindings)
+
+locale: language+country enviornment, It's part of the process of *localization*
+*Internationalization* (i18n) is the process of making your program localizable. Emacs is *partialy* internationalized
+It uses locales, can handle lots of language, but part is jsut English only (including help and diagnostics)
+
+
+Q: What does it mean to prepend a path
+- path tells the shell where to find commands
+
+C-x 0 
+C-x 1
+C-x 2
+C-x 3 (Create a new window side-by-side)
+C-x 4
+C-x 5 
+
+C-h k K (find out what key K does)
+C-h b (key bindings)
+C-h m (current mode, Emacs is a *modeful* editor - it has state that governes how it interprests your commands.
+      C-j in this window measn one thing (insert a newline)
+      C-j in another window might mean something else
+      *scratch* buffer, for example it means evaluate previous expression
+
+C-h t (tutorial)
+C-h i (info)
+
+Files and file systems
+  Files are byte sequences
+    ls lists are the files in the current direcotry
+    ls -l (list details)
+    ls -a (list all files, even "hidden ones, files are hidden if there is a period before it)
+  So there are are at least 2 kinds of files
+  Directiores are files that contain lists of file name components and what they mean. 
+  
+  Start at the root directory "/", look for home under that
+    ls -l /(what you want to look at)
+  You keep travering the directory hierarchy until you get to the file that you want 
+
+Copy: M-w
+Past: C-y
+****************************************************************************************************************************
+UCLA CS 97 lecture 2020-01-06
+
+Three topics:
+
+* Emacs intro - text editor + development enviroment  ) MIT thing 1980s
+* Unix/Linux/POSIX file system organization           ) Bell Labs thing 1970s
+* Command-line basics and the Unix/Linux/POSIX shell  )
+
+We’re developing apps, and we want them to:
+  * survive power outages and system crashes
+    (persistence) (persistent data)
+  * be fast (so we cannot make *everything* persistent,
+             because secondary storage is too slow
+           aside: hard disks are pretty slow
+                  flash drives are still too slow for interactive
+              newer devices may be better)
+  * be understandable (easy to 1)read, 2)maintain, 3)write)
+
+Emacs provides a view into this situation (a bit tricky,
+since Emacs itself is an app).  Which means you can use
+Emacs to view itself!  It’s *reflective*, it can look
+at itself in a “mirror”.  Also, it’s not magic - you could
+have written it yourself - there’s no secret sauce.  And people have!
+
+Q. how can you enter emacs to edit a txt file?
+A. I forgot to tell you how to start up!
+  Log into SEASnet and show you. (current session on my home machine)
+  Shell command: ‘emacs filename’
+  I usually just type plain ‘emacs’.
+    C-x C-f filename RET
+
+    C-x means “HOld down Ctrl key, and type x”
+    RET means Enter (or Return) key
+    SPC means space (space bar)
+    ESC means Escape (Esc)
+
+I’ve been typing using the keyboard.  Occasionally I put in blank lines.
+By typing Enter.  If I’m curious about how that works, I can type this.
+
+   C-h k Enter
+
+Hold down Control key, and type h
+Type k
+Type Enter
+
+Emacs then pops up a *Help* buffer that explains to experts
+what that key will do.
+
+Q. What does C-x C-f do?
+A. Type “C-h k C-x C-f” and see.  OK, maybe this is overkill
+     It creates a new buffer holding the contents of the named
+     file, and then switches to that buffer.
+
+  Some terminology:
+     file - persistent sequence of bytes stored in a filesystem
+               (a filesystem is a persistent data structure
+            representing a set of files)
+        shared among applications
+     buffer - (Emacs)
+            non-persistent sequence of bytes in a particular Emacs session
+     window - (Emacs) view of a buffer.
+            There are two windows right now, one looks at notes.txt buffer
+        the other looks at the *Help* buffer
+        Each window has a “mode line” telling you about the window.
+        Windows have a (typically) view of the buffer contents.
+     frame - (Emacs) what everybody else calls a window.
+            Zoom calls frames “windows”.
+
+Q. do we need to ssh with x forwarding enabled into seasnet if we want
+the gui like you have?
+A. Yes, if you want to run an Emacs GUI. I never do. I run it in terminal
+mode because the network latency is irritating.
+
+Q. where is the buffer stored, is it a temporary file in application folder?
+A. Neither.  It’s only in RAM.  Emacs core is written in C,
+   it uses malloc to grab some memory, and stores the buffer contents there.
+
+Q. What is ssh?
+A. Secure SHell.  (aside: marketing term)
+   Establishes an encrypted etc. (relatively secure) connection
+   between your computer and (say) SEASnet.
+
+Q. will the meta key be ESC if we’re using emacs while using ssh
+A. Yes and no.  If you’ve configured SSH correctly, ALT key should
+work just like locally.  But if not, you can type “ESC x” instead
+of “M-x”.
+
+Q. What does x forwarding mean?
+A. See demo.
+
+Q. can you explain once again what it means that an emacs window has a
+view of the buffer contents please?
+
+   C-x 5 2 - clone current frame
+   C-x 5 0 - delete current frame
+
+Q. is this class do-able using only Windows..?
+A. Of course not. (!)  You really need to run your stuff on SEASnet,
+   even if you develop on MS Windows or macOS.
+
+Q. Are the changes you make to the cloned frame local to that copy?
+A. Yes, the two frames are the same Emacs.  Demo in a single frame.
+    C-x 2
+   Changing one changes the other.
+
+Q. are the directions to connect to SEASnet on the CCLE or class website?
+A. On SEASnet or on Piazza.
+
+Q. So C-x 2 is required for changes to be shared between copies?
+A. No, there’s just one copy of a buffer in one Emacs session.
+   There are two views (Emacs windows), but just one buffer.
+
+Q. how do you close a window?
+A. C-x 0 - close this window
+   C-x 1 - close all windows other than this one,
+
+Break until 12:58.
+
+Q. what does it mean to be in a C/POSIX locale?
+A. That’s more of a shell thing.
+   You can set up your environment to be appropriate for
+   different locales (language, currency, time).
+
+    M-x shell
+    locale -a
+
+   The "C" locale is the simplest, barebones locale.
+   Each character is a single byte, and rules are simple.
+
+Q. is there a way to see all of the options for C-x? Like a way to
+easily see what 0,1,2,3 etc do?
+A. C-h b - list all of your keybindings
+
+Q. can you have more than two windows open? say three or four
+A. Yes, as many as can fit.
+
+Q. What is the difference between linux posix and the third one?
+Unix - original system designed at Bell Labs in 1970s by Turing award winners
+        (derived from Multics, simplified)
+    (lots of variants, Solaris, AIX, macOS, GNU/Linux, ...)
+POSIX - standardized version (common subset)
+GNU/Linux - most popular variant
+        “Linux” is the name of the kernel
+
+Q. What does locale mean?
+A. A “locale” is a language+country environment.
+   It’s part of the process of *localization*.
+   *Internationalization* (i18n) is the process of making
+   your program localizable.   Emacs is *partly* internationalized,
+   it uses locales, can handle lots of languages, but part
+   is just English only (including help and diagnostics).
+
+Q. What does it mean to prepend to PATH? and how can you do it?
+A. Associated with every POSIX session is an *environment*
+   a set of name-value pairs.  The command ‘env’ outputs it.
+
+Q.  Would you like us to run on the C locale via opening a shell while
+in Emacs for our hw?
+A. Sounds like a win. It’ll keep things simple.
+
+Q. how do you set the locale for your system
+A. Set LC_ALL in your environment
+
+      LC_ALL=C
+      export LC_ALL
+
+Q. What is a kernel
+A. Core part of the operating system, manages memory, processes, files,
+     but it has no apps.  (CS 111 for details)
+
+Q. does posix mean that a program written for one unix variant should
+run on another unix variant? but if that’s the case then why are there
+different downloads for software for macos vs linux
+A. (1) They run only they stick to the POSIX subset.
+   (2) POSIX is about source code only.
+
+Q. what do we do if it breaks? contact seasnet?
+A. help@seas.ucla.edu
+
+Q. How is echo $PATH and pwd different?
+A. ‘echo $PATH’ simply outputs an environment variable’s value.
+   pwd says where the current process is
+
+Q. Why are macOS and windows much more popular than Linux if Linux is the OG?
+A. More machines run Linux than run macOS or MS-Windows.
+
+
+
+C-x 0
+C-x 1
+C-x 2
+C-x 3 - create new window side-by-side
+C-x 5
+
+C-h k K - find out what key K does
+C-h b - key bindings
+C-h m - current mode
+         Emacs is a *modeful* editor - it has state that
+     governs how it interprets your commands.
+     C-j in this window means one thing (insert a newline)
+     C-j in another window might mean something else
+       *scratch* buffer, for example, it means evaluate
+       previous expression
+
+
+
+C-h t - tutorial
+C-h i - info
+
+C-x b NAME - switch to the buffer NAME
+    Use TAB to autocomplete
+
+Q. How do you access the file, edit, options, buffers, tools, text, help bar at the top?
+A. The same way as other apps on your system.
+   Mine is GNOME.
+
+C-x C-b - list all your buffers
+
+C-x C-f FILENAME RET - visit FILENAME
+C-x C-s - save current buffer (necessary to make it persist
+C-x d DIRNAME RET - visit a directory (default is current directory)
+    You are then in dired mode, editing that directory.
+    sdfsaf
+    sadfxadfdfddsafadf
+
+Q. To save a current buffer for example do we press simultaneously control and x then again simultaneously control and s ?
+A. C-s means "hold down Ctrl while typing s".
+
+notes.txt - file last time we saved
+notes.txt~ - file contents before we started this session
+#notes.txt# - very recent copy of associated buffer
+.#notes.txt - symbolic link to “nowhere” that indicates who is editing the file.
+
+Q. what do you mean by contents before we started this session?
+A. I created a nearly-empty notes.txt file before starting Emacs.
+
+Q. So you can manually save into notes.txt and emacs also autosaves
+#notes.txt# as well?
+A. Yes!
+
+Q. what is a posix session?
+A. That’s my terminology, not a standard one.
+   Environments belong to *processes*.
+   A process is a program that’s running.
+   When you login to SEASnet, you have a process that’s running the shell.
+   A child process inherits a copy of its parent’s.
+
+
+Files and file systems
+   Files are byte sequences
+     ls lists the files in the current directory
+      ls -l - list details
+      ls -a - list all files, even “hidden” ones.
+                      (start with “.”)
+      ls -L - follow all symbolic links
+   So there are at least three kinds of files.
+   Directories are files that contain lists of file name components and what the mean.
+   Symbolic links are files that point to other files.
+
+A full file name like this:
+
+ /home/eggert/class/cs97/2021-winter/2020-01-06/notes.txt
+
+Start at the root directory "/", look for home under that.
+You keep traversing the directory hierarchy until you get
+to the file you’re looking for.
+
+You can change your working directory via the command ‘cd’.
+Used for file names that don’t start with slash.
+
+   If the working directory is /home/eggert/class
+   Then cs97/2021-winter/2020-01-06/notes.txt stands for the same thing
+   as /home/eggert/class/cs97/2021-winter/2020-01-06/notes.txt.
+
+Copy
+
+C-@ mark current position
+M-w copy from mark to current pos
+C-y yank
+
+GUI Emacs can also use the mouse in the usual way.

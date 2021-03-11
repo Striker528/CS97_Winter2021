@@ -1,0 +1,331 @@
+Midterm Questions 1-3
+
+First if we can figure out the RegEx, that makes our work easier for all 3
+other problems.
+
+Rule 1
+    You can replace any sequence of two or more ‘/’s with a single ‘/’.
+    /{2,} -> /
+    After escaping the special characters (/ and .) with \
+    \/{2,} -> /
+
+    OR
+    Can be implemented as
+    //+ -> /
+    \/\/+ -> /
+
+Rule 2
+    You can replace any ‘/./’ with ‘/’.
+    /./ -> /
+    After escaping the special characters (/ and .) with \
+    \/\.\/ -> /
+
+Rule 3
+    You can replace leading ‘/../’ with ‘/’.
+    /../ -> /
+    After escaping the special characters (/ and .) with \
+    ^\/\.\.\/ -> /
+
+Rule 4
+    You can remove any sequence that consists of a file name component
+    other than ‘.’ or ‘..’, followed by ‘/’, followed by the file name
+    component ‘..’.
+
+    not ./.. -> delete
+    not ../.. -> delete
+
+    Regex does not have an easy not operator for these situations, so we need
+    to come up with solution in a different way. What are valid options?
+
+    3+ characters of any type           [:print:]{3,} 
+    . + any other character not a dot   .[^.]+
+    any character not a dot             [^.]
+    Followed by /..                     \/\.\.
+
+    All together:                       
+    ([[:print:]]{3,}|.[^.]+|[^.])\/\.\. -> delete
+
+    Note there is also a negative lookahead operator, but that is more complicated
+    and I don't believe was ever covered.
+
+Question 1:
+
+    Pseudocode:
+
+    Loop through line by line from stdin
+        Use regex to replace each of the 4 patterns above
+        If line is same at end as it was at start, print line and move to next
+
+    A little more detailed pseudocode:
+
+    for line in stdin
+        start_loop_string = line
+        while True
+            mod_string = regex replace(pattern1)
+            mod_string = regex replace(pattern2)
+            mod_string = regex replace(pattern3)
+            mod_string = regex replace(pattern4)
+            if start_loop_string = mod_string
+                break
+        print mod_string
+
+    Actual python code:
+        import sys
+        import re
+
+        for line in sys.stdin.readlines():
+            line = line.rstrip() # remove any extra whitespace at end of line
+            start_loop_string = line
+            while True:
+                mod_string = re.sub("\/{2,}", "/", start_loop_string)
+                mod_string = re.sub("\/\.\/", "/", mod_string)
+                mod_string = re.sub("^\/\.\.\/", "/", mod_string)
+                mod_string = re.sub("([[:print:]]{3,}|.[^.]+|[^.])\/\.\.", "/", mod_string)
+                if mod_string == start_loop_string:
+                    print(mod_string)
+                    break
+                else:
+                    start_loop_string = mod_string
+
+    Note:
+        Small details like the line strip, or other syntax quirks are not as important
+        as the overall approach of using something like re.sub() to modify the pattern
+        and detect when there are no more modifications left
+
+Question 2:
+
+    Pseudocode:
+    Define function simplify-buffer-file-names
+    Loop until no more changes are made
+        Use re-search-forward with replace-match to replace each patern
+        Set loop condition to found something if needed
+        
+
+    Acutal code:
+    (defun simplify-buffer-file-names()
+        (setq condition nil)
+        (while (not condition) (
+            (setq condition '())
+            (while (re-search-forward "\/{2,}" nil t)
+                (replace-match "/") (setq condition t))
+            (goto-char (point-min))
+            (while (re-search-forward "\/\.\/" nil t)
+                (replace-match "/") (setq condition t))
+            (goto-char (point-min))
+            (while (re-search-forward "^\/\.\.\/" nil t)
+                (replace-match "/") (setq condition t))
+            (goto-char (point-min))
+            (while (re-search-forward "([[:print:]]{3,}|.[^.]+|[^.])" nil t)
+                (replace-match "/") (setq condition t))
+            (goto-char (point-min)))))
+
+    Most of the core logic is in the parts that do the find + replace.
+    Can read more at https://www.gnu.org/software/emacs/manual/html_node/elisp/Search-and-Replace.html
+        (while (re-search-forward "pattern" nil t) 
+            (replace-match "replacement"))
+    
+    Other less-critical code is used to keep looping until no matches are found, 
+    and reset the search from the beginning of the buffer each time
+
+    Note we are also making some assumptions on the smaller details.
+    But would prevent this code from working as is.
+        One is that we used extended regular expressions in re-search-forward.
+    But you don't need perfectly working code to get credit
+    
+Question 3:
+    Pseudocode:
+        Same as before mostly
+
+    Actual Code:
+        while read -r line; do
+            startLine="$line"
+            while true; do
+                modLine=$(echo "$startLine" |
+                            sed -E "s/\/{2,}/\//" |
+                            sed -E "s/\/\.\//\//" |
+                            sed -E "s/^\/\.\.\//\//" |
+                            sed -E "s/([[:print:]]{3,}|.[^.]+|[^.])\/\.\.//")
+                if [ "$startLine" == "$modLine" ]; then
+                    echo "$modLine"
+                    break
+                else
+                    startLine="$modLine"
+                fi
+            done
+        done
+    
+    Notes:
+        The sed format is "s/Pattern/Replacement/"
+            Because our replacement is a special character / which conflicts with SED syntax,
+            we also need to escape it with \. Hence \/
+        We enabled Extended regular expressions with the -E flag
+        
+Question 4:
+    The rules are incomplete because they do not account for symbolic links.
+
+    A symbolic link 's' points to a filename 'd'. So they start with different
+    strings but ultimately point to the same file.
+
+    They can each have different paths, for example:
+        Full Path of 's' : /home/me/s
+        Full path of 'd' : /tmp/d
+
+    But s must point to the same file as d, even if the paths don't simplify the same way.
+    Hence the rules are incomplete, and you would need to account for symbolic links.
+
+    One solution could be to retrieve the file that the symbolic links points to for simplifying
+    or 
+    Don't simplify symbolic links
+
+Question 5:
+    Multiple possible answers.
+
+    One possible is to be wary of variables in filename path. For example: ~
+
+    ~/../tmp would be simplified to /tmp which may not be correct.
+
+    You would have to modify the rules to ignore variables in the filename path like ~
+
+Question 6:
+
+    Remember the following rules:
+    |       redirects stdout of one command to stdin of another
+    ;       means to execute the two commands sequentially (no connecting of stdin/stdout)
+    2>      means redirect stderr to another location
+    2>&1    means redirect stderr to the location of stdout
+    >       means redirect stdout to another location
+    ()      means execute that group of commands in a subshell
+
+    Program a:
+        stdin comes from the programs stdin
+        stdout gets piped to next segment
+        stderr has no change from normal
+    Program b:
+        stdin comes from a's stdout
+        stdout will be captured in subshell and go to e in next subshell
+        stderr will be sent to stdout shown above ^
+    Program c:
+        stdin comes from a's stdout ONLY if b doesn't use it, otherwise no stdin
+        stdout will be captured in subshell and go to e in next subshell
+        stderr goes to file d
+    Program e:
+        stdin comes from the stdout + stderr of b, and stdout of c
+        stdout will be piped to f
+        stderr will be sent to subshell's stdout which is file g
+    Program f:
+        stdin comes from stdout of e
+        stdout will be sent to subshell's stdout which is file g
+        stderr will be sent to subshell's stdout which is file g
+
+Question 7:
+    (Follow instructions from tic-tac-toe React Tutorial)
+    1. Install recent version of Node using method of choosing
+    2. Install React and its dependencies with 'npx create-react-app my-app'
+    3. Remove any pre-existing files in src directory (cd my-app/src; rm -f *)
+    4. Add supplementary files/details
+        Copy starter code to index.js
+        import React statements in index.js file
+        Add CSS in index.css
+    5. Start the web server with 'npm start'
+    6. Load the browswer page with the URL provided when launched with 'npm start'
+        Likely 'http://localhost:3000'
+
+Question 8
+    Yes it is possible to convert JSX to plain JavaScript
+
+    Ultimately JSX is just syntatic sugar for the React.createElement() function.
+    So we could replace all of our JSX with React.createElement() assuming we provide 
+    the right parameters. As an example we convert the JSX below:
+
+    JSX: <div>Hello {this.props.name}</div>
+    Vanilla JS: React.createElement('div', null, `Hello ${this.props.name}`)
+
+Question 9:
+    The HTTP protocol that our browser and web servers uses by default is TCP-based
+
+    TCP gurantees reliable transmission, so if we drop one packet than the client/server
+    will detect that and retransmit the packet. There is a minor bit of lag time to 
+    detect and then retransmit that single packet. But ultimately all the packets will arrive
+    so the user would not see any effects other than some milliseconds of delay.
+
+Question 10:
+    Part 1
+        The two lines are not contradictory because while squares is a const, that applies as a
+        constant binding to the array reference. 
+
+        We can not reassign squares like the below:
+            const squares = [4, 5, 6]
+            squares = [1, 2, 3] //DOES NOT WORK
+        
+        But we are allowed to modify the elements within squares, which is squares[i]
+            squares[2] = 2 //This is ok
+
+    Part 2
+        The program creates a copy first to preverse immutability. Immutability is 
+        an important part of React since many things (like the rendering engine) detect
+        when things like state change. And immutability generally allows us to implement more
+        complex features. So by making a copy, modifying that, and then finally updating the
+        state variable we are able to minimize the amount of render updates and implement
+        our complex code more efficiently.
+
+Question 11:
+    Modifications are below. Note that in normal usage, double-click and single-click
+    on same element would not work very well. But that can be ignored in this question since
+    you are told you can use React's onDoubleClick event
+
+    General approach is to add:
+        - handleDoubleClick(i) function which will handle the logic of erasing piece/updating state
+        - onDoubleClick prop bound to the handleDoubleClick(i) function
+        - modify JSX button to have onDoubleClick action which activates the onDoubleClick prop
+
+
+    //bind the onDoubleClick action to the onDoubleClick props
+    function Square(props) {
+        return (
+            <button className="square" onClick={props.onClick)} onDoubleClick={props.onDoubleClick}>
+            {props.value}
+            </button>
+        );
+    }
+
+    //function to erase piece and update state
+    handleDoubleClick(i) {
+        //don't let user remove an empty square or move if game is over
+        if( calculateWinner(squares) || !squares[i]) {
+            return;
+        }
+
+        //set square to null (so piece can be placed later)
+        squares[i] = null;
+
+        //update state
+        this.setState({
+            squares: squares,
+            xIsNext: !this.state.xIsNext,
+        })
+    }
+
+    //bind onDoubleClick to function
+    renderSquare(i) {
+        return (
+            <Square
+                value={this.state.squares[i]}
+                onClick={() => this.handleClick(i)}
+                onDoubleClick={() => this.handleDoubleClick(i)}
+            />
+        );
+    }
+
+
+
+
+
+
+
+
+    
+
+    
+
+            
+
