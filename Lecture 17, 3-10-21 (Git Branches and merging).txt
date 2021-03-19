@@ -1,0 +1,258 @@
+UCLA CS 97 lecture 2021-03-10
+
+Q. Will we have a pre final lecture like the midterm?
+A. Previous discussion did that, like the midterm.
+
+Q. Considering that assignment 6 took a while to do and I'd assume
+everyone is putting a lot of time and effort into their project along
+with their other classes, due to stress and time constraints, will it
+be possible for there to be no final this quarter?
+A. Not really. The goal is for the final to be a learning experience.
+
+Q. Are you gonna make the final optional :)?
+A. No.
+
+
+Git concluded
+building
+
+Git internals
+
+Git branches (Git book 3.1)
+
+  What branches are for:
+
+    mainline development versus maintenance releases
+
+    alternate versions of the future
+
+    feature branches
+      branch A:
+    Let’s implement a new feature A without worrying (much) about how it
+    will work with another new feature B.
+      branch B:
+        Likewise.
+     Whichever team finishes first - will merge their changes into main.
+     The team that finishes second - will need to figure out how
+       to deal with interactions (found via merge collisions).
+
+    forking (dispute over direction of the project)
+       licensing problems, say
+       often results in cloning repository, each side dealing with own clones.
+       pretty rare - gets a lot of press when it happens
+
+       Q. What do you mean by dispute over direction?
+       A. For Emacs, there was a fork called XEmacs.
+            to work better with X Window System, if I recall
+
+     Q. Are git cat-file -p and git show —format=raw the same thing?
+     A. No; try it.
+
+     Q. What files contain the branch information?
+     A. .git/packed-refs and .git/refs
+
+     Q. If you edit a .git folder by manually adding a directory for
+     example, how come it corrupts the whole repo?
+     A. You can easily trash your repository by editing its files
+     directory.  So you can corrupt it.  There’s a bit of a tension
+     here, in that there are commands like ‘git config’ that will
+     edit the .git/config file for you “safely”.  I use those commands
+     when writing shell scripts that manipulate other people’s repositories.
+     But I’ll also edit .gitconfig by hand.  But I won’t delete .git/objects
+     files by hand.
+
+     Q. The heads folder has current branches, but what about deprecated ones?
+     A. You can change the set of branches you care about, and Git
+     will “forget” about the ones you no longer want. (Old ones will
+     still appear in logs.)
+
+     Q. how can you rename the master branch to master-bad.., when
+     things got messed up in the master branch?
+     A. demo.
+
+     Q. If we do a git pull in the repo who’s upstream is the local
+     git repo of emacs, does it fetch the latest commits from the
+     local repo or the one from internet?
+     A. We had two directories:
+           emacs/master upstream of
+       emacs/cs97
+        sv.gnu.org is upstream of emacs/master
+
+        A git pull in emacs/master fetches from sv.gnu.org,
+    and does not look at (or change) emacs/cs97.
+
+     Q. I meant emacs/cs97
+     A. A git pull fetches from emacs/master, not from sv.gnu.org.
+
+
+Q during break. Professor, would there still be a second feedback survey to do?
+A. Yes. I’ll send email to the class about that, probably today (maybe
+tomorrow). Similar style as last time.
+
+Q during break. Could you talk about the format/logistics of the final please?
+
+A. Like the midterm: Starts at time established by Register.  You must
+finish in 24 hours, you pick when to start and when to finish (3 hours
+later + extra time if CAE).  Covers the whole class with a slight
+emphasis on after-the-midterm material.  I’ll start with a brief
+Zoom session (same ID as lecture) for last-minute issues.
+
+Some Git commands for branches
+  A branch is a lightweight movable pointer to a commit.
+
+  git branch - lists branches
+  git branch XXX - creates branch X (starting at where you are)
+  git checkout XXX - switches your attention to commit XXX
+                        XXX can be a branch name
+       This can remove files, add files, change files.
+  git checkout -b YYY XXX = git checkout XXX; git branch YYY
+  git commit - creates a commit, moves HEAD + current branch forward
+                    to point to the new commit.
+               (parent is the previous HEAD)
+  git branch -d XXX - delete branch XXX (just deletes pointer)
+  git branch -D XXX - delete branch XXX (just deletes pointer),
+                       forcing deletion even if XXX’s changes
+               are not present in the current branch
+  git branch -m XXX YYY - renames a branch
+     Aside: I’m currently about this to do this in tzdb:
+        ‘git branch -m master main’
+     This will cause some pain downstream, even though I’m
+     only renaming a pointer.
+
+   Q. So is it a good idea to delete branches that have been merged
+   with main that we have no intention of using again? Because in my
+   project I have a bunch of branches that I never plan on using
+   again.
+   A. Yes, if they bug you. (my opinion)
+      The packrat philosophy is to never remove branches.
+
+   Q. if we delete a branch that hasn’t been merged yet, is it good to
+   have those commits hanging there occupying the space?
+   A. Temporarily maybe, because you might change your mind.
+   You can tell Git to omit all objects not pointed to by any branch.
+
+   Q. Wait we can have dangling commits?
+   A. Yes! I did that last time: git init + git write (created object,
+        no branch).  You can make it stop dangling by creating a
+    new branch.
+
+   Q. Isn’t it in the master branch?
+   A. It’s just another branch (it’s the default, that’s all).
+
+Merging
+   The big gorilla of Git.
+     Other changes are easy, but merging can be a pain.
+
+                 Ancestor version of a text file:
+            a b c d e f
+
+    Branch 1:                 Branch 2:
+
+     a b d e g                  a b x d e f
+
+
+     You can think of merging as combining diffs
+
+demo involving diff3
+Q. How come it’s ignored the missing f?
+A. only one branch changed f
+
+Q. how did ‘d’ not become an issue in the merge, given that b1 and b2
+had ‘d’ in different indices.
+A. diff (and diff3) compare sequences, without much caring about
+the indexes.  It’s like algorithms matching your DNA to that
+the Neanderthals.
+
+    yours:  CTAGCCTTTAG
+    Neander:CTAGTCCTTTAG
+       This inserted a “T”.
+  Eugene Myers did diff algorithm, and the Human Genome Project.
+
+The Git Merge command
+
+   git merge XXX - merges branch XXX into current branch C,
+                       based on their common ancestor A
+
+       There can be problems with this, due to collisions.
+       ‘git merge’ will complain, will generate a working
+       file with <<<<<<< b1 ||||| ancestor ||||| b2 >>>>>>
+       It’s your job to figure out what happened.
+       This can be tricky. I often look at the history
+       of both branches (or write to other developers)
+       to figure out what to do.
+
+   Q. What are >>>>>>>>> |||||||||| <<<<<<<<<?
+   A. My symbols for what Git puts into a file.
+
+       ordinary merged
+       output with
+       no trouble
+       <<<<<<<<
+       contents of
+       branch b1
+       =========
+       contents of ancestor
+       ==========
+       contents of
+       branch b2
+       >>>>>>>>>
+       no trouble output
+
+    The absence of Git-collisions doesn’t mean there are no collisions.
+
+
+Rebasing (alternative to merging).
+
+   You want to think of constructing patches
+   as being the thing you’re doing
+   as opposed to just writing code.
+
+git rebase main
+
+git rebase -i main  # Interactive rebase.
+  This lets you edit the series of patches you’re constructing
+  in your branch.
+  It gives you a text file listing your changes,
+    You can edit it to come up with a different set of changes.
+  Please try this on one of your branches.
+
+Q. Can you rebase to a previous version of the main branch?
+A. Yes and this is reasonably common.
+
+Q. Could you please reexplain rebasing and deltas😬? Im not sure I
+understand it.
+A. You’re editing your set of patches.
+
+     git format-patch main
+       generates a series of patch files from ‘main’
+       7, say (you have 7 commits separating you from master)
+     git rebase -i main
+       lets you edit a set of 7 commands
+         (by default you “pick” a commit (you keep it))
+     You can omit one,
+     You can change its or its commit message.
+     You reorder commits.
+     You can coalesce adjacent commits (squashing)
+
+Q. what do you mean by patches?
+A. A patch is the output of ‘diff’ - it tells you the difference
+between two commits.
+
+Q. does rebase create a new branch that you can switch to, or it is a
+theoretical branch that applies the patches?
+A. It reuses the existing branch pointer.
+
+Q. by commits away from the main do you mean from when you branched
+off from main (not from the most current version of main).
+A. Yes.
+
+Q. What happens with git blame when the original code entry is no
+longer part of the sequence of main?
+A. Git blame tells about lines currently present in the source.
+And which commit they came from.  It’s not so good with lines
+that used to be there, but are absent now.
+
+I didn’t get to talk about build tools.
+I should have talked faster!
+
+Build tools brief notes are at the end of this description (after the shell transcript).  These will not be covered in the final exam.

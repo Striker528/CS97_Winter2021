@@ -91,7 +91,8 @@ over when a watchpoint takes effect, letting you fill out unnecessary
 detail.  These can be evaluated efficiently (with hardware support)
 if the expressions are simple enough.
 
-Q. if we are only watching 1 variable at a time, does that mean if we need to debug 5 variables, we have to rerun the program 5 times to watch for that individual variable?
+Q. if we are only watching 1 variable at a time, does that mean if we need to debug 5 variables, we have to rerun the program 
+	5 times to watch for that individual variable?
 A. We can watch several variables, just as we can have breakpoints
 on several locations.  The program stops (letting GDB take control)
 whenever the first breakpoint or watchpoint is hit.
