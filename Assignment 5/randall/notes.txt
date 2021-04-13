@@ -1,0 +1,249 @@
+Homework: Tuning and refactoring a C program
+Keep a log in the file notes.txt of what you do in the homework so that you can 
+	reproduce the results later. 
+This should not merely be a transcript of what you typed: it should be more like a true 
+	lab notebook, 
+	in which you briefly note down what you did and what happened.
+	
+git clone https://github.com/Striker528/CS97-Assignment5.git
+
+after any change:
+
+git add *
+
+git commit -m "Starting things up"
+
+git push
+
+
+
+You’re trying to generate large quantities of random numbers for use in a 
+	machine-learning experiment. 
+You have a program randall that can generate random byte streams, but it has problems. 
+You want it to be 
+	(a) faster and 
+	(b) better-organized.
+
+You can find a copy of the randall source code in the tarball randall-assignment.txz. It contains:
+	A file (randall.c) that is a single main program, which you would like to modularize.
+	A (Makefile) that can build the program randall and can build the tarball.
+First, read and understand the code in randall.c and in Makefile.
+
+In Ubuntu, in the directory, use 
+	code .
+	to open VScode in the current directory
+
+make randall
+	- to create the execuitble for randall.c
+	
+Need to install makes: 
+	sudo apt install make
+
+Need to install gcc:
+	sudo apt install gcc
+
+https://linuxize.com/post/how-to-install-gcc-compiler-on-ubuntu-18-04/
+
+./randall 20
+- 20 random characters
+
+
+Next, modify the Makefile so that the command 'make check' tests your program. 
+You can supply just a simple test, e.g., that the output is the correct length. 
+You’re doing this step first because you believe in test-driven development (TDD).
+
+in Makefile:
+check: 
+
+variable="somestring";
+echo ${#variable};
+
+actualLength = $(./randall M)
+
+
+check: 
+	./test_script.sh
+
+#!/bin/bash
+
+testLength=$(./randall 5 | wc -c); 
+	if [ $testLength -eq 5 ]; then echo "success"; else echo "fail"; fi
+#bash is nasty with spaces
+#no $ is needed at the beginning testLength
+
+
+
+
+gcc -O2 -g3 -Wall -Wextra -fanalyzer -march=native -mtune=native -mrdrnd randall.c options.c /
+	output.c rand64-hw.c rand64-sw.c
+
+git init
+
+git add --all
+
+git commit --am "message"
+
+git push
+
+git remote --v
+
+Next, split the randall implementation by copying its source code into the following modules, 
+	which you will need to likely need to modify to get everything to work:
+	
+	options.c with header options.h, which does command-line options processing. 
+		Initially there isn’t very much of this.
+	output.c with header output.h, which does the output.
+	rand64-hw.c with header rand64-hw.h, which does the hardware-based random-number generation.
+	rand64-sw.c with header rand64-sw.h, which does the software-based random-number generation.
+	randall.c should contain the main program that glues together everything else. 
+		It should include the .h files mentioned above, and use their APIs to do its work.
+		
+You may add other modules if you like. 
+Each module should include the minimal number of include files; for example, 
+	since rand64-hw.c doesn't need to do I/O, it shouldn't include <stdio.h>. 
+	
+Also, each module should keep as many symbols private as it can.
+
+I created 2 functions. 
+	1 in options.c which I called CheckArgs()
+	Another in ouput.c which I called dealsWithOutput()
+	In where I copied all the correspoinding code into there
+Then for hw and sw, I copied the all the code into the corresponding files and then put the 
+	headers into the header files
+
+I had a bad problem of undefind references, until I added in all the necessary file 
+	in the make file and created a new make caled make fullrandall which combined each 
+	file. 
+
+I next, had to remove the static words from each variable name as that was giving me so many 
+	problems. 
+
+Taking a year off from C did not help in this project at all as most of problems were 
+	syntax issues. 
+
+
+
+To solve the link(undefined reference) problem, 
+	we need to remove all the static keywords before your function declarations and definitions. 
+What static do to functions is that it localize the definition of your functions, 
+	in which case you can define different versions of functions with the same name. 
+For example, if we define a static function test_func() in file a.c, it means this 
+	function only works in a.c. 
+Other files cannot steal this definition from a.c at all. test_func() is set local in a.c.
+
+(check out https://www.geeksforgeeks.org/what-are-static-functions-in-c/ for more info)
+
+
+Next, I had to solve the pointer problems, and they were indeed problems. 
+
+I generally cannot get a grip on pointers so I had to keep looking up guides, but 
+	I managed to figure it out in the end. 
+
+
+
+
+
+
+
+
+Next, modify the Makefile to compile and link your better-organized program.
+
+make file:
+
+fullrandall:
+	gcc -O2 -g3 -Wall -Wextra -fanalyzer -march=native -mtune=native -mrdrnd randall.c options.c /
+	output.c rand64-hw.c rand64-sw.c
+
+
+
+Next, add some options to your program to help you try to improve its performance. 
+
+
+
+Redo the program so that it has an option '-i input', where input is one of the following:
+	rdrand – the hardware random-number generation supported by x86-64 processors if available; 
+		randall should issue an error message and fail if it is not available. 
+			This option is the default.
+				mrand48_r – the mrand48_r function of the GNU C library.
+	/F (i.e., any argument beginning with /) – use the file /F as a source of random data, 
+	instead of using /dev/random.
+
+Also, redo the program so that it has an option -o output, where output is one of the following:
+	stdio – Use stdio output, as before. This is the default.
+	N (a positive decimal integer) – Output N bytes at a time, using the write system call. 
+		If the write call reports a successful write of fewer than N bytes, 
+			do not consider this to be an error; 
+			just add the successfully-written number of bytes to your count of bytes written. 
+		The last output block might be smaller than usual, if needed to get the 
+			total size to be correct. 
+		You can use the malloc function to allocate your output buffer.
+
+You can use getopt to implement your option processing.
+
+In my input, I implemented the getopt() function in order to get the arguements that were
+	given. 
+
+Then in my output.c I managed to get the psuedo code from Daniel's slides and make it 
+	work according to my code. 
+
+
+Add some 'make check' tests to check your additions to randall.
+
+akshaysinghal@cs.ucla.edu
+
+
+
+
+When debugging, you may find the valgrind program useful. 
+Also, the AddressSanitizer (asan) and the Undefined Behavior Sanitizer (ubsan) may be useful; 
+	these can be enabled with the GCC options -fsanitize=address and -fsanitize=undefined, 
+		respectively.
+
+If the program encounters an error of any kind (including option, output and memory 
+	allocation failures), 
+	it should report the error to stderr and exit with status 1; otherwise, 
+		the program should succeed and exit with status 0. 
+The program need not report stderr output errors.
+
+Finally, time your implementation as follows ...
+
+    # This is a sanity check to test whether you’re in the right ballpark.
+    time dd if=/dev/urandom ibs=8192 obs=8192 count=16384 >/dev/null
+
+    time ./randall 133562368 >/dev/null
+    time ./randall 133562368 | cat >/dev/null
+    time ./randall 133562368 >rand.data
+... except that you may need different numbers if your implementation is faster or slower. 
+Also you should try various combinations of the above options to see which gives you 
+	random data the fastest. 
+One option that you should try is '-i /dev/urandom'.
+
+Record your results (including your slow results) in notes.txt.
+
+Use a private local Git repository to keep track of your work when you’re modifying code, 
+	data, or notes.txt.
+
+But, in the end I could not get it working 100%, 
+	I had huge problems with the printf statements as I wanted them to print 
+	differently from the output, but the check statment I had combined the printf 
+	statements and the output, making all checks failures. 
+
+So here I am with something that does not work well, even with all the time I put in it.
+
+I really hated this. 
+
+Submit
+Submit two files:
+
+1. The file (randall-submission.tgz), which you can build by running the command make submission. 
+	Test your tarball before submitting it, by extracting from it into a fresh directory and by 
+		running 'make check' there.
+2. A gzipped copy of your private local Git repository, 
+	created by the command "tar -czf randall-git.tgz .git" 
+	in the parent of your Git repository.
+	
+All source files should be ASCII text files, with no carriage returns, 
+	and with no more than 100 columns per line. The shell command
+expand Makefile notes.txt *.c *.h |
+  awk '/\r/ || 100 < length'
+should output nothing.

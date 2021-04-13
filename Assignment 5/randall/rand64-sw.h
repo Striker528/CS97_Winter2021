@@ -1,45 +1,19 @@
-/* Software implementation.  */
+#ifndef __rand64_sw__
+#define __rand64_sw__
 
-/* Input stream containing random bytes.  */
-static FILE *urandstream;
+#include "options.h"
 
 /* Initialize the software rand64 implementation.  */
-static void
-software_rand64_init (void)
-{
-  urandstream = fopen ("/dev/random", "r");
-  if (! urandstream)
-    abort ();
-}
+void software_rand64_init (void);
 
 /* Return a random value, using software operations.  */
-static unsigned long long
-software_rand64 (void)
-{
-  unsigned long long int x;
-  if (fread (&x, sizeof x, 1, urandstream) != 1)
-    abort ();
-  return x;
-}
+unsigned long long software_rand64 (void);
 
 /* Finalize the software rand64 implementation.  */
-static void
-software_rand64_fini (void)
-{
-  fclose (urandstream);
-}
+void software_rand64_fini (void);
 
-static bool
-writebytes (unsigned long long x, int nbytes)
-{
-  do
-    {
-      if (putchar (x) < 0)
-	return false;
-      x >>= CHAR_BIT;
-      nbytes--;
-    }
-  while (0 < nbytes);
+void setUserFile(char inputFile[]);
 
-  return true;
-}
+_Bool writebytes (unsigned long long x, int nbytes);
+
+#endif

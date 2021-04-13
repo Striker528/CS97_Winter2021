@@ -1,23 +1,29 @@
-#include <rand64-sw.h>
+#include "rand64-sw.h"
+
+#include <cpuid.h>
+#include <errno.h>
+#include <immintrin.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /* Software implementation.  */
 
 /* Input stream containing random bytes.  */
 static FILE *urandstream;
 
+char *fileName; 
+
 /* Initialize the software rand64 implementation.  */
-static void
-software_rand64_init (void)
-{
-  urandstream = fopen ("/dev/random", "r");
+void software_rand64_init (void) {
+  urandstream = fopen (fileName, "r");
   if (! urandstream)
     abort ();
 }
 
 /* Return a random value, using software operations.  */
-static unsigned long long
-software_rand64 (void)
-{
+unsigned long long software_rand64 (void) {
   unsigned long long int x;
   if (fread (&x, sizeof x, 1, urandstream) != 1)
     abort ();
@@ -25,15 +31,15 @@ software_rand64 (void)
 }
 
 /* Finalize the software rand64 implementation.  */
-static void
-software_rand64_fini (void)
-{
+void software_rand64_fini (void) {
   fclose (urandstream);
 }
 
-static bool
-writebytes (unsigned long long x, int nbytes)
-{
+void setUserFile( char *inputFile){
+  fileName = inputFile;
+}
+
+_Bool writebytes (unsigned long long x, int nbytes) {
   do
     {
       if (putchar (x) < 0)

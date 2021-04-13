@@ -20,9 +20,10 @@ OPTIMIZE = -O2
 
 # The C compiler and its options.
 CC = gcc
+
 #CFLAGS = $(OPTIMIZE) -g3 -Wall -Wextra -fanalyzer \
 
-CFLAGS = $(OPTIMIZE) -g3 -Wall -Wextra \
+CFLAGS = $(OPTIMIZE) -g3 -Wall -Wextra -fanalyzer \
   -march=native -mtune=native -mrdrnd
 
 # The archiver command, its options and filename extension.
@@ -38,8 +39,11 @@ randall: randall.c
 #this will buld the randall executible
 	$(CC) $(CFLAGS) $@.c -o $@ 
 
+fullFile: randall.c options.c output.c rand64-hw.c rand64-sw.c
+	$(CC) $(CFLAGS) randall.c options.c output.c rand64-hw.c rand64-sw.c mrand48r.c -o fullrandall
+
 assignment: randall-assignment.$(TAREXT)
-assignment-files = COPYING Makefile randall.c
+assignment-files = COPYING Makefile randall.c mrand48r.c mrand48r.h options.c options.h output.c output.h rand64-hw.c rand64-hw.h rand64-sw.c rand64-sw.h test_script.sh
 randall-assignment.$(TAREXT): $(assignment-files)
 	$(TAR) $(TARFLAGS) -cf $@ $(assignment-files)
 

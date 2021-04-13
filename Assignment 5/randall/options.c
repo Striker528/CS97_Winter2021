@@ -1,21 +1,82 @@
-#include <options.h>
+#include "options.h"
 
-if (argc == 2)
-    {
-      char *endptr;
-      errno = 0;
-      nbytes = strtoll (argv[1], &endptr, 10);
-      if (errno)
-	perror (argv[1]);
-      else
-	valid = !*endptr && 0 <= nbytes;
+#include <cpuid.h>
+#include <errno.h>
+#include <immintrin.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <string.h>
+
+#include<unistd.h>
+
+
+
+int checkArgs(int argc, char **argv, struct format * userFormat){
+
+  //char testString []= "Entering checkArgs";
+  //printf("%s", testString);
+
+  userFormat->howManyBytesAtATime = -1;
+  userFormat->input = "/dev/random";
+  userFormat->nbytes = 0;
+
+  int c = 0;
+
+    while ((c = getopt(argc, argv, "i:o:")) != -1) {
+
+      /*extern char *optarg = c;*/
+
+        switch(c) {
+        case 'i': {
+
+          if(optarg[0] == '/'){
+            userFormat->input = optarg; 
+            break;
+          }
+          else if (strcmp(optarg, "mrand48_r") == 0){
+            userFormat->input = "mrand48_r";
+            break;
+          }
+          else{
+            userFormat->input = "hardware_rand64_init";
+            break;
+          }
+
+          break;
+        }
+
+        case 'o': {
+          //char testString1 []= "Entering the o part";
+          //printf("%s", testString1);
+
+
+          if (strcmp(optarg, "stdio") == 0){
+            break;
+          }
+          else{
+            /* Do N, Output N bytes at a time, using the write system call*/
+            if(  (long long int)optarg > 0){
+              (*userFormat).howManyBytesAtATime = (long long)optarg;
+            }
+          }
+
+          break;
+        }
+        }
     }
-  if (!valid)
-    {
-      fprintf (stderr, "%s: usage: %s NBYTES\n", argv[0], argv[0]);
+    
+    /* optind == argc*/
+    /* N bytes == optind */
+    /* printf*/
+    /* getchar */
+    char *endptr;
+    (*userFormat).nbytes = strtoll(argv[optind], &endptr, 10); 
+
+    if(userFormat->nbytes < 0){
       return 1;
     }
-
-  /* If there's no work to do, don't worry about which library to use.  */
-  if (nbytes == 0)
     return 0;
+}
